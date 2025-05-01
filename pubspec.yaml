@@ -1,0 +1,34 @@
+name: xalute
+description: "Xalute platform"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fl_chart: ^0.64.0
+  cupertino_icons: ^1.0.8
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/xalute.png"
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: SeoulNam
+      fonts:
+        - asset: assets/fonts/seoul_nam.ttf
+

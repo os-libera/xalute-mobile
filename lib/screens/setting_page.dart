@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // intl 패키지를 사용하려면 pubspec.yaml에 추가 필요
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -10,154 +11,157 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _birthController = TextEditingController();
+  final TextEditingController _birthdayController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  String? savedName;
-  String? savedBirth;
+  final FocusNode _nameFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
 
-  void _saveInfo() {
-    setState(() {
-      savedName = _nameController.text;
-      savedBirth = _birthController.text;
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+
+    _nameFocus.addListener(() {
+      if (_nameFocus.hasFocus && _nameController.text.isEmpty) {
+        _nameController.clear();
+      }
     });
 
+    _passwordFocus.addListener(() {
+      if (_passwordFocus.hasFocus && _passwordController.text.isEmpty) {
+        _passwordController.clear();
+      }
+    });
+  }
+
+  Future<void> _saveUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    print("✅ 저장 시도: ${_nameController.text}, ${_birthdayController.text}, ${_passwordController.text}");
+
+    await prefs.setString('username', _nameController.text);
+    await prefs.setString('birthday', _birthdayController.text);
+    await prefs.setString('password', _passwordController.text);
+
+    print("✅ SharedPreferences 저장 완료");
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("사용자 정보가 저장되었습니다.")),
+      const SnackBar(content: Text("저장되었습니다.")),
     );
   }
 
-  Future<void> _selectBirthDate() async {
-    DateTime initialDate = DateTime.tryParse(_birthController.text) ?? DateTime(2000, 1, 1);
+  Future<void> _selectBirthday() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: DateTime(2001, 1, 1),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      helpText: '생년월일 선택',
-      fieldLabelText: '생년월일',
-      fieldHintText: '예: 1998-10-25',
+      locale: const Locale("ko", "KR"),
     );
     if (picked != null) {
       setState(() {
-        _birthController.text = DateFormat('yyyy-MM-dd').format(picked);
+        _birthdayController.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Profile',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('이름', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: '이름을 입력하세요',
-                      filled: true,
-                      fillColor: const Color(0xFFF1F2F6),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('생년월일', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: _selectBirthDate,
-                    child: AbsorbPointer(
-                      child: TextField(
-                        controller: _birthController,
-                        decoration: InputDecoration(
-                          hintText: '예: 1998-10-25',
-                          filled: true,
-                          fillColor: const Color(0xFFF1F2F6),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: const Icon(Icons.calendar_today),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: const Color(0xFF4E8CFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: _saveInfo,
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (savedName != null && savedBirth != null) ...[
-              Text('Setting information', style: const TextStyle(fontSize: 20)),
-              Text('이름: $savedName', style: const TextStyle(fontSize: 16)),
-              Text('생년월일: $savedBirth', style: const TextStyle(fontSize: 16)),
-            ]
-          ],
-        ),
-      ),
-    );
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _nameController.text = prefs.getString('username') ?? '';
+      _birthdayController.text = prefs.getString('birthday') ?? '';
+      _passwordController.text = prefs.getString('password') ?? '';
+    });
+
+    print("📦 불러온 값: username=${_nameController.text}, birthday=${_birthdayController.text}, password=${_passwordController.text}");
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _birthController.dispose();
+    _birthdayController.dispose();
+    _passwordController.dispose();
+    _nameFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("설정"),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Your profile is..", style: TextStyle(fontSize: 18)),
+            const SizedBox(height: 12),
+            Center(
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.grey[200],
+                backgroundImage: const AssetImage('assets/icon/xalute.png'),
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text("Your name is..", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _nameController,
+              focusNode: _nameFocus,
+              decoration: const InputDecoration(
+                hintText: "username",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text("Your birthday is..", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _selectBirthday,
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: _birthdayController,
+                  decoration: const InputDecoration(
+                    hintText: "01/01/2001",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text("Your password is..", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _passwordController,
+              focusNode: _passwordFocus,
+              obscureText: true,
+              decoration: const InputDecoration(
+                hintText: "0000",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 30),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  print("🟡 저장 버튼 눌림!");
+                  _saveUserData();
+                },
+                child: const Text("저장"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

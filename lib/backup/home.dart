@@ -1,35 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class HomePage extends StatelessWidget {
+  final String username;
+  final int healthScore;
+  final int healthDiff;
+  final int monthlyCount;
+  final int streakDays;
+  final int todayCount;
+  final int arrhythmiaCount;
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  String username = "user";
-  // dumy data
-  int healthScore = 72;
-  int healthDiff = 3;
-  int monthlyCount = 6;
-  int streakDays = 5;
-  int todayCount = 2;
-  int arrhythmiaCount = 3;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUsername();
-  }
-
-  Future<void> _loadUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      username = prefs.getString('username') ?? "user";
-    });
-  }
+  const HomePage({
+    super.key,
+    this.username = "user",
+    this.healthScore = 72,
+    this.healthDiff = 3,
+    this.monthlyCount = 6,
+    this.streakDays = 5,
+    this.todayCount = 2,
+    this.arrhythmiaCount = 3,
+  });
 
   @override
   Widget build(BuildContext context) {

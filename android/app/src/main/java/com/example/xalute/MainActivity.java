@@ -19,61 +19,66 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import androidx.annotation.NonNull;
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodChannel;
 
-    private static final String TAG = "MainActivity";
+import androidx.annotation.NonNull;
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodChannel;
+
+public class MainActivity extends FlutterActivity {
+    private static final String CHANNEL = "com.example.xalute/watch";
     private static final String START_APP_PATH = "/start-app";
     private String nodeId;
     private MessageClient messageClient;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        Log.d(TAG, "✅ MainActivity 실행됨!");
+    public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
 
         messageClient = Wearable.getMessageClient(this);
         getConnectedNode();
 
-        sendMessageToWatch();
-    }
-
-    private void getConnectedNode() {
-        Wearable.getNodeClient(this).getConnectedNodes()
-                .addOnCompleteListener(new OnCompleteListener<List<Node>>() {
-                    @Override
-                    public void onComplete(@NonNull Task<List<Node>> task) {
-                        if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                            nodeId = task.getResult().get(0).getId();
-                            Log.d(TAG, "✅ 연결된 노드 ID: " + nodeId);
-                        } else {
-                            Log.e(TAG, "❌ 노드 연결 실패");
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
+                .setMethodCallHandler((call, result) -> {
+                    if (call.method.equals("isWatchConnected")) {
+                        result.success(nodeId != null);
+                    } else if (call.method.equals("launchWatchApp")) {
+                        if (nodeId == null) {
+                            result.error("NO_NODE", "워치가 연결되지 않았습니다", null);
+                            return;
                         }
+
+                        try {
+                            JSONObject json = new JSONObject();
+                            json.put("name", "");
+                            json.put("birthDate", "20250501");
+                            json.put("action", "launch_app");
+                            String payload = json.toString();
+
+                            messageClient.sendMessage(nodeId, START_APP_PATH, payload.getBytes())
+                                    .addOnSuccessListener(unused -> result.success(true))
+                                    .addOnFailureListener(e -> result.error("SEND_FAILED", "전송 실패", e));
+                        } catch (Exception e) {
+                            result.error("JSON_ERROR", "JSON 생성 실패", e);
+                        }
+                    } else {
+                        result.notImplemented();
                     }
                 });
     }
 
-    private void sendMessageToWatch() {
-        if (nodeId == null) {
-            Log.w(TAG, "⏳ 노드 ID가 아직 준비되지 않음");
-            return;
-        }
-
-        try {
-            JSONObject json = new JSONObject();
-            json.put("name", "");
-            json.put("birthDate", "20250501");
-            json.put("action", "launch_app");
-            String payload = json.toString();
-
-            Log.d(TAG, "📤 워치에 전송할 메시지: " + payload);
-            messageClient.sendMessage(nodeId, START_APP_PATH, payload.getBytes())
-                    .addOnSuccessListener(unused -> Log.d(TAG, "✅ 워치 메시지 전송 성공"))
-                    .addOnFailureListener(e -> Log.e(TAG, "❌ 메시지 전송 실패", e));
-
-        } catch (Exception e) {
-            Log.e(TAG, "❌ JSON 생성 오류", e);
-        }
+    private void getConnectedNode() {
+        Wearable.getNodeClient(this).getConnectedNodes()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        nodeId = task.getResult().get(0).getId();
+                    } else {
+                        nodeId = null;
+                    }
+                });
     }
 }

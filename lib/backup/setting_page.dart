@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/main_navigation.dart';
+import 'main_navigation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

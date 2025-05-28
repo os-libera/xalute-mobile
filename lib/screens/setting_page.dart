@@ -102,7 +102,7 @@ class _SettingPageState extends State<SettingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Your profile is..", style: TextStyle(fontSize: 18)),
+            const Text(" ", style: TextStyle(fontSize: 18)),
             const SizedBox(height: 12),
             Center(
               child: CircleAvatar(
@@ -112,7 +112,7 @@ class _SettingPageState extends State<SettingPage> {
               ),
             ),
             const SizedBox(height: 32),
-            const Text("Your name is..", style: TextStyle(fontSize: 16)),
+            const Text("이름", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -123,7 +123,7 @@ class _SettingPageState extends State<SettingPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text("Your birthday is..", style: TextStyle(fontSize: 16)),
+            const Text("생년월일", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _selectBirthday,
@@ -138,7 +138,7 @@ class _SettingPageState extends State<SettingPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text("Your password is..", style: TextStyle(fontSize: 16)),
+            const Text("비밀번호", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             TextField(
               controller: _passwordController,

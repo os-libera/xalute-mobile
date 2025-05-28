@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/services.dart';
+import 'ecg_data_service.dart';
 
 class EcgPage extends StatefulWidget {
   const EcgPage({super.key});
@@ -15,36 +17,23 @@ class _EcgPageState extends State<EcgPage> {
   bool isLoading = false;
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDay;
-  static const platform = MethodChannel('com.example.xalute/watch');
 
-  // 임시 데이터
-  Map<DateTime, List<String>> statusMap = {
-    DateTime.utc(2025, 4, 17): ['정상', '비정상'],
-    DateTime.utc(2025, 4, 20): ['정상', '정상'],
-    DateTime.utc(2025, 4, 21): ['정상'],
-    DateTime.utc(2025, 4, 23): ['정상'],
-    DateTime.utc(2025, 4, 24): ['비정상', '비정상'],
-    DateTime.utc(2025, 5, 24): ['비정상', '비정상'],
-  };
+  @override
+  void initState() {
+    super.initState();
+    selectedDay = DateTime.now();
+    Future.delayed(Duration.zero, () {
+      final ecgService = Provider.of<EcgDataService>(context, listen: false);
+      ecgService.addListener(() {
+        if (mounted) setState(() {});
+      });
+    });
+  }
 
-  List<Map<String, dynamic>> results = [
-    {
-      'date': '4월 17일 11시 08분',
-      'status': '정상',
-      'color': Colors.green
-    },
-    {
-      'date': '4월 17일 19시 52분',
-      'status': '비정상',
-      'color': Colors.red
-    },
-  ];
-
-  // android, ioS 분기
   void _handleMeasureButton() {
     if (Platform.isAndroid) {
       _showAndroidMeasureDialog();
-    } else if (Platform.isIOS) { // iOS 파트 수정 필요
+    } else if (Platform.isIOS) {
       setState(() => isLoading = true);
       Future.delayed(const Duration(seconds: 2), () {
         setState(() => isLoading = false);
@@ -61,11 +50,16 @@ class _EcgPageState extends State<EcgPage> {
           ),
         );
       });
+    } else {
+      debugPrint("⚠️ 지원되지 않는 플랫폼에서 버튼 눌림");
     }
   }
 
-  // android 분기
   void _showAndroidMeasureDialog() async {
+    if (!Platform.isAndroid) return;
+
+    const platform = MethodChannel('com.example.xalute/watch');
+
     try {
       final bool isConnected = await platform.invokeMethod('isWatchConnected');
       if (!isConnected) {
@@ -119,23 +113,26 @@ class _EcgPageState extends State<EcgPage> {
 
   @override
   Widget build(BuildContext context) {
-    int totalCount = 0;
-    int todayCount = 0;
+    final ecgService = Provider.of<EcgDataService>(context);
     final now = DateTime.now();
     final selected = selectedDay ?? now;
-    final normalizedSelected = DateTime.utc(selected.year, selected.month, selected.day);
-    final selectedStatuses = statusMap[normalizedSelected] ?? [];
+    final normalizedSelected = DateTime(selected.year, selected.month, selected.day);
+    final statusMap = ecgService.statusMap;
+    final selectedResults = ecgService.entriesForDay(normalizedSelected);
 
-    for (var entry in statusMap.entries) {
-      if (entry.key.month == selected.month) {
-        totalCount += entry.value.length;
-      }
-    }
-    todayCount = selectedStatuses.length;
+    debugPrint("✅ 현재 statusMap: ${statusMap.keys}");
+    debugPrint("✅ entries: ${ecgService.entries.length}");
+    debugPrint("📆 선택된 날짜: ${normalizedSelected.toIso8601String()}");
+    debugPrint("✅ 선택된 날짜의 결과 개수: ${selectedResults.length}");
+
+    int totalCount = statusMap.entries
+        .where((e) => e.key.month == selected.month && e.key.year == selected.year)
+        .fold(0, (sum, e) => sum + e.value.length);
+    int todayCount = selectedResults.length;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("ECG 기록"),
+        title: const Text("ECG"),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -162,10 +159,12 @@ class _EcgPageState extends State<EcgPage> {
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 12, 31),
               selectedDayPredicate: (day) => isSameDay(selectedDay, day),
-              onDaySelected: (selected, focused) => setState(() {
-                selectedDay = selected;
-                focusedDay = focused;
-              }),
+              onDaySelected: (selected, focused) {
+                setState(() {
+                  selectedDay = selected;
+                  focusedDay = focused;
+                });
+              },
               calendarFormat: CalendarFormat.month,
               availableCalendarFormats: const {
                 CalendarFormat.month: 'Month'
@@ -177,10 +176,14 @@ class _EcgPageState extends State<EcgPage> {
                 ),
                 disabledTextStyle: const TextStyle(color: Colors.grey),
               ),
-              enabledDayPredicate: (day) => statusMap.containsKey(DateTime.utc(day.year, day.month, day.day)),
+              enabledDayPredicate: (day) {
+                final normalized = DateTime(day.year, day.month, day.day);
+                return statusMap.containsKey(normalized);
+              },
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, day, _) {
-                  final statuses = statusMap[DateTime.utc(day.year, day.month, day.day)];
+                  final normalized = DateTime(day.year, day.month, day.day);
+                  final statuses = statusMap[normalized];
                   if (statuses == null) {
                     return Center(
                       child: Text(
@@ -242,14 +245,14 @@ class _EcgPageState extends State<EcgPage> {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(20),
-                itemCount: results.length,
+                itemCount: selectedResults.length,
                 itemBuilder: (context, index) {
-                  final result = results[index];
+                  final result = selectedResults[index];
                   return Card(
-                    color: result['color'].withOpacity(0.1),
+                    color: result.color.withOpacity(0.1),
                     child: ListTile(
-                      title: Text(result['date']),
-                      subtitle: Text(result['status'], style: TextStyle(color: result['color'])),
+                      title: Text("${result.dateTime.month}월 ${result.dateTime.day}일 ${result.dateTime.hour}시 ${result.dateTime.minute}분"),
+                      subtitle: Text(result.result, style: TextStyle(color: result.color)),
                       trailing: TextButton(
                         onPressed: () {},
                         child: const Text("자세히"),

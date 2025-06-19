@@ -17,12 +17,21 @@ class EcgEntry {
 class EcgDataService extends ChangeNotifier {
   final List<EcgEntry> _entries = [];
 
+  String _userName = 'User';
+
   List<EcgEntry> get entries => _entries;
+
+  String get userName => _userName;
+
+  void setUserName(String name) {
+    _userName = name.isEmpty ? "User" : name;
+    notifyListeners();
+  }
 
   Map<DateTime, List<String>> get statusMap {
     final map = <DateTime, List<String>>{};
     for (var e in _entries) {
-      final dayKey = DateTime.utc(e.dateTime.year, e.dateTime.month, e.dateTime.day); // ✅ UTC 기준
+      final dayKey = DateTime.utc(e.dateTime.year, e.dateTime.month, e.dateTime.day);
       map.putIfAbsent(dayKey, () => []);
       map[dayKey]!.add(e.result);
     }
@@ -34,6 +43,11 @@ class EcgDataService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clear() {
+    _entries.clear();
+    notifyListeners();
+  }
+
   List<EcgEntry> entriesForDay(DateTime day) {
     final d = DateTime.utc(day.year, day.month, day.day);
     return _entries.where((e) {
@@ -42,4 +56,3 @@ class EcgDataService extends ChangeNotifier {
     }).toList();
   }
 }
-

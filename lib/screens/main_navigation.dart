@@ -17,7 +17,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const HomePage(),
     const EcgPage(),
     const Placeholder(), // Score → 추후 ScorePage()로 대체
-    const SettingPage(), // Setting → 추후 SettingPage()로 대체
+    const SettingPage(),
   ];
 
   void _onItemTapped(int index) {

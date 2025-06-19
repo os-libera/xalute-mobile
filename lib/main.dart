@@ -5,29 +5,30 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'screens/splash_screen.dart';
 import 'screens/ecg_data_service.dart';
+import 'screens/splash_screen.dart';
+import 'screens/setting_page.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-late EcgDataService ecgService;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  ecgService = EcgDataService();
-
-  final app = ChangeNotifierProvider.value(
-    value: ecgService,
+  final app = ChangeNotifierProvider(
+    create: (_) => EcgDataService(),
     child: const HealthApp(),
   );
 
   runApp(app);
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
     if (Platform.isAndroid) {
       debugPrint("🟢 Android 환경 - setupWatchListener 실행");
       setupWatchListener();
-      preloadSavedEcgFiles(ecgService);
+
+      final context = navigatorKey.currentContext!;
+      final ecgService = Provider.of<EcgDataService>(context, listen: false);
+      await preloadSavedEcgFiles(ecgService);
     } else {
       debugPrint("🟡 ECG 초기화 생략 (iOS)");
     }
@@ -45,10 +46,9 @@ void setupWatchListener() {
 
       final Map<String, dynamic> resultObj = jsonDecode(data['result']);
       final String result = resultObj['result'];
-
       final int timestamp = data['timestamp'];
 
-      debugPrint("📥 saveReceivedEcg 실행 직전: result=${result}");
+      debugPrint("📥 saveReceivedEcg 실행 직전: result=$result");
       await saveReceivedEcg(fileContent, result, timestamp);
     }
   });
@@ -65,12 +65,15 @@ Future<void> saveReceivedEcg(String content, String result, int timestamp) async
   debugPrint("📥 ECG 저장 완료: ${file.path}");
 
   final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal();
-  final mappedResult = result.toLowerCase() == 'normal' ? '정상' : '비정상';
+  final mappedResult = result.toLowerCase() == 'normal' ? '정상' : '이상 소견 의심'; // ✅ 변경
+
+  final context = navigatorKey.currentContext!;
+  final ecgService = Provider.of<EcgDataService>(context, listen: false);
 
   ecgService.addEntry(EcgEntry(
     dateTime: dateTime,
     result: mappedResult,
-    color: mappedResult == '정상' ? Colors.green : Colors.red,
+    color: mappedResult == '정상' ? Colors.green : const Color(0xFFFB755B),
     content: content,
   ));
 }
@@ -108,10 +111,9 @@ Future<void> preloadSavedEcgFiles(EcgDataService service) async {
           }
 
           final dt = DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal();
-
           final resultRaw = resultWithExtension.split('.').first;
-          final result = resultRaw.toLowerCase() == 'normal' ? '정상' : '비정상';
-          final color = result == '정상' ? Colors.green : Colors.red;
+          final result = resultRaw.toLowerCase() == 'normal' ? '정상' : '이상 소견 의심'; // ✅ 변경
+          final color = result == '정상' ? Colors.green : const Color(0xFFFB755B);
           final content = await file.readAsString();
 
           service.addEntry(EcgEntry(
@@ -141,12 +143,15 @@ class HealthApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       title: 'Xalute',
       theme: ThemeData(
-        fontFamily: "SeoulNam",
+        fontFamily: "Pretendard",
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       home: const SplashScreen(),
+      routes: {
+        '/settings': (context) => const SettingPage(),
+      },
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

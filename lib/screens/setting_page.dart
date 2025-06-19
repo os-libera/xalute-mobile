@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'ecg_data_service.dart';
+import 'package:provider/provider.dart';
+
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -38,18 +41,38 @@ class _SettingPageState extends State<SettingPage> {
   Future<void> _saveUserData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    print("✅ 저장 시도: ${_nameController.text}, ${_birthdayController.text}, ${_passwordController.text}");
+    final name = _nameController.text;
+    final birthday = _birthdayController.text;
+    final password = _passwordController.text;
 
-    await prefs.setString('username', _nameController.text);
-    await prefs.setString('birthday', _birthdayController.text);
-    await prefs.setString('password', _passwordController.text);
+    await prefs.setString('username', name);
+    await prefs.setString('birthday', birthday);
+    await prefs.setString('password', password);
 
-    print("✅ SharedPreferences 저장 완료");
+    // ✅ EcgDataService에도 반영
+    final ecgService = Provider.of<EcgDataService>(context, listen: false);
+    ecgService.setUserName(name);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("저장되었습니다.")),
     );
   }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('username') ?? '';
+
+    setState(() {
+      _nameController.text = name;
+      _birthdayController.text = prefs.getString('birthday') ?? '';
+      _passwordController.text = prefs.getString('password') ?? '';
+    });
+
+    // ✅ 초기 로드시도 EcgDataService에 이름 반영
+    final ecgService = Provider.of<EcgDataService>(context, listen: false);
+    ecgService.setUserName(name);
+  }
+
 
   Future<void> _selectBirthday() async {
     final DateTime? picked = await showDatePicker(
@@ -64,17 +87,6 @@ class _SettingPageState extends State<SettingPage> {
         _birthdayController.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
-  }
-
-  Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nameController.text = prefs.getString('username') ?? '';
-      _birthdayController.text = prefs.getString('birthday') ?? '';
-      _passwordController.text = prefs.getString('password') ?? '';
-    });
-
-    print("📦 불러온 값: username=${_nameController.text}, birthday=${_birthdayController.text}, password=${_passwordController.text}");
   }
 
   @override

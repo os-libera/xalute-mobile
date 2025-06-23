@@ -1,3 +1,4 @@
+/** Main **/
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'ecg_data_service.dart';
-import '../main.dart'; // navigatorKey, preloadSavedEcgFiles 사용 시 필요
+import '../main.dart';
 
 class EcgPage extends StatefulWidget {
   const EcgPage({super.key});
@@ -23,8 +24,11 @@ class _EcgPageState extends State<EcgPage> {
     super.initState();
     selectedDay = DateTime.now();
     final ecgService = Provider.of<EcgDataService>(context, listen: false);
-    preloadSavedEcgFiles(ecgService); // 초기 로딩
+    preloadSavedEcgFiles(ecgService);
     ecgService.addListener(() {
+      if (mounted) setState(() {});
+    });
+    Future.delayed(Duration.zero, () {
       if (mounted) setState(() {});
     });
   }
@@ -37,8 +41,11 @@ class _EcgPageState extends State<EcgPage> {
     setState(() {});
   }
 
-  void _openSettings() {
-    Navigator.pushNamed(context, '/settings');
+  void _openSettings() async {
+    final result = await Navigator.pushNamed(context, '/settings');
+    if (result == true && mounted) {
+      setState(() {});
+    }
   }
 
   void _handleMeasureButton() async {
@@ -79,9 +86,9 @@ class _EcgPageState extends State<EcgPage> {
           ),
         );
       } on PlatformException catch (e) {
-        debugPrint("플랫폼 오류: \${e.message}");
+        debugPrint("플랫폼 오류: ${e.message}");
       }
-    } else {
+    } else { // iOS
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("To do")));
     }
   }
@@ -92,9 +99,17 @@ class _EcgPageState extends State<EcgPage> {
     final selected = selectedDay ?? DateTime.now();
     final normalizedSelected = DateTime.utc(selected.year, selected.month, selected.day);
     final selectedResults = ecgService.entriesForDay(normalizedSelected);
-    final monthResults = ecgService.entries.where((entry) =>
-    entry.dateTime.year == focusedDay.year && entry.dateTime.month == focusedDay.month).toList();
+    final monthResults = ecgService.entries
+        .where((entry) =>
+    entry.dateTime.year == focusedDay.year && entry.dateTime.month == focusedDay.month)
+        .toList();
     final abnormalMonthTotal = monthResults.where((e) => e.result == '이상 소견 의심').length;
+
+    if (ecgService.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -108,34 +123,52 @@ class _EcgPageState extends State<EcgPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "${ecgService.userName}님의 건강점수는",
-                            style: const TextStyle(fontSize: 18),
+                            "${ecgService.userName}님의",
+                            style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Row(
                             children: const [
-                              Text("72점", style: TextStyle(fontSize: 32, color: Color(0xFFFB755B), fontWeight: FontWeight.bold)),
+                              Text(
+                                "건강점수는 72점",
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  color: Color(0xFFFB755B),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               SizedBox(width: 6),
-                              Icon(Icons.chevron_right)
+                              Icon(Icons.chevron_right),
                             ],
                           ),
                           const Text("어제보다 3점 올랐어요", style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: _openSettings,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8.0, bottom: 8),
-                        child: Image.asset('assets/icon/profile.png', width: 48, height: 48),
+                    const SizedBox(width: 12),
+                    Align(
+                      alignment: Alignment.center,
+                      child: GestureDetector(
+                        onTap: _openSettings,
+                        child: Consumer<EcgDataService>(
+                          builder: (context, ecgService, child) {
+                            return CircleAvatar(
+                              radius: 25,
+                              backgroundColor: Colors.grey[200],
+                              backgroundImage: ecgService.profileImagePath != null
+                                  ? FileImage(File(ecgService.profileImagePath!))
+                                  : const AssetImage('assets/icon/profile.png') as ImageProvider,
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -145,18 +178,34 @@ class _EcgPageState extends State<EcgPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: () => setState(() => focusedDay = DateTime(focusedDay.year, focusedDay.month - 1)),
+                    Row(
+                      children: [
+                        Text(
+                          "${focusedDay.year}년 ${focusedDay.month}월",
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () => setState(() =>
+                          focusedDay = DateTime(focusedDay.year, focusedDay.month - 1)),
+                          child: Icon(Icons.chevron_left, color: Colors.grey[700], size: 24),
+                        ),
+                        const SizedBox(width: 2),
+                        GestureDetector(
+                          onTap: () => setState(() =>
+                          focusedDay = DateTime(focusedDay.year, focusedDay.month + 1)),
+                          child: Icon(Icons.chevron_right, color: Colors.grey[700], size: 24),
+                        ),
+                      ],
                     ),
-                    Text("${focusedDay.year}년 ${focusedDay.month}월", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () => setState(() => focusedDay = DateTime(focusedDay.year, focusedDay.month + 1)),
+                      icon: const Icon(Icons.refresh),
+                      tooltip: '새로고침',
+                      onPressed: _refreshCalendarData,
                     ),
-                    IconButton(icon: const Icon(Icons.refresh, size: 20), tooltip: '새로고침', onPressed: _refreshCalendarData),
                   ],
                 ),
               ),
@@ -200,7 +249,9 @@ class _EcgPageState extends State<EcgPage> {
                 ),
                 enabledDayPredicate: (day) {
                   final normalized = DateTime.utc(day.year, day.month, day.day);
-                  return ecgService.statusMap.containsKey(normalized);
+                  final today = DateTime.now();
+                  final isToday = isSameDay(today, day);
+                  return ecgService.statusMap.containsKey(normalized) || isToday;
                 },
                 calendarBuilders: CalendarBuilders(
                   defaultBuilder: (context, day, _) {
@@ -225,19 +276,25 @@ class _EcgPageState extends State<EcgPage> {
                       ],
                     );
                   },
-
-                  // ✅ 이 부분을 추가하세요
                   todayBuilder: (context, day, _) {
                     final normalized = DateTime.utc(day.year, day.month, day.day);
                     final statuses = ecgService.statusMap[normalized];
-                    if (statuses == null) return null;
-                    final abnormalCount = statuses.where((e) => e == '이상 소견 의심').length;
-                    final totalCount = statuses.length;
+                    final hasData = statuses != null;
+                    final abnormalCount = hasData ? statuses!.where((e) => e == '이상 소견 의심').length : 0;
+                    final totalCount = hasData ? statuses.length : 0;
+
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('${day.day}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-                        RichText(
+                        Text(
+                          '${day.day}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: hasData ? Colors.black : Colors.grey, // ⚠️ 데이터 없으면 회색
+                          ),
+                        ),
+                        hasData
+                            ? RichText(
                           text: TextSpan(
                             children: [
                               TextSpan(text: '$abnormalCount', style: const TextStyle(fontSize: 10, color: Color(0xFFFB755B))),
@@ -245,7 +302,8 @@ class _EcgPageState extends State<EcgPage> {
                               TextSpan(text: '$totalCount', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                             ],
                           ),
-                        ),
+                        )
+                            : const SizedBox(height: 0),
                       ],
                     );
                   },
@@ -274,14 +332,41 @@ class _EcgPageState extends State<EcgPage> {
                   children: selectedResults.map((entry) {
                     final formatted = DateFormat('M월 d일 HH시 mm분').format(entry.dateTime);
                     final isAbnormal = entry.result == '이상 소견 의심';
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(formatted),
-                      trailing: Text(
-                        entry.result,
-                        style: TextStyle(color: isAbnormal ? const Color(0xFFFB755B) : Colors.grey[700], fontWeight: FontWeight.w500),
+
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/ecgDetail',
+                          arguments: entry,
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              formatted,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  entry.result,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: isAbnormal ? const Color(0xFFFB755B) : Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.chevron_right, color: Colors.grey),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      onTap: () {},
                     );
                   }).toList(),
                 ),
@@ -312,286 +397,3 @@ class _EcgPageState extends State<EcgPage> {
     );
   }
 }
-
-
-/**import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'ecg_data_service.dart';
-import '../main.dart'; // navigatorKey 및 preloadSavedEcgFiles 사용 위해
-
-class EcgPage extends StatefulWidget {
-  const EcgPage({super.key});
-
-  @override
-  State<EcgPage> createState() => _EcgPageState();
-}
-
-class _EcgPageState extends State<EcgPage> {
-  bool isCalendarExpanded = true;
-  bool isLoading = false;
-  DateTime focusedDay = DateTime.now();
-  DateTime? selectedDay;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedDay = DateTime.now();
-    final ecgService = Provider.of<EcgDataService>(context, listen: false);
-    ecgService.addListener(() {
-      if (mounted) setState(() {});
-    });
-  }
-
-  Future<void> _refreshCalendarData() async {
-    final context = navigatorKey.currentContext!;
-    final ecgService = Provider.of<EcgDataService>(context, listen: false);
-    ecgService.clear(); // 기존 메모리 데이터 초기화
-    await preloadSavedEcgFiles(ecgService); // 저장된 파일에서 다시 로딩
-  }
-
-  void _handleMeasureButton() {
-    if (Platform.isAndroid) {
-      _showAndroidMeasureDialog();
-    } else if (Platform.isIOS) {
-      setState(() => isLoading = true);
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() => isLoading = false);
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            content: const Text("건강 앱에서 데이터를 조회 중입니다."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("확인"),
-              )
-            ],
-          ),
-        );
-      });
-    } else {
-      debugPrint("⚠️ 지원되지 않는 플랫폼에서 버튼 눌림");
-    }
-  }
-
-  void _showAndroidMeasureDialog() async {
-    if (!Platform.isAndroid) return;
-
-    const platform = MethodChannel('com.example.xalute/watch');
-
-    try {
-      final bool isConnected = await platform.invokeMethod('isWatchConnected');
-      if (!isConnected) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            content: const Text("워치와의 연결을 확인해주세요."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("확인"),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          content: const Text("워치에서 ECG 측정을 진행하시겠습니까?"),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                try {
-                  await platform.invokeMethod('launchWatchApp');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("워치 앱 실행됨")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("워치 앱 실행 실패")),
-                  );
-                }
-              },
-              child: const Text("확인"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("취소"),
-            ),
-          ],
-        ),
-      );
-    } on PlatformException catch (e) {
-      debugPrint("플랫폼 오류: ${e.message}");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ecgService = Provider.of<EcgDataService>(context);
-    final now = DateTime.now();
-    final selected = selectedDay ?? now;
-    final normalizedSelected = DateTime.utc(selected.year, selected.month, selected.day);
-    final statusMap = ecgService.statusMap;
-    final selectedResults = ecgService.entriesForDay(normalizedSelected);
-
-    int totalCount = statusMap.entries
-        .where((e) => e.key.month == selected.month && e.key.year == selected.year)
-        .fold(0, (sum, e) => sum + e.value.length);
-    int todayCount = selectedResults.length;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("ECG"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("${focusedDay.year}.${focusedDay.month}", style: const TextStyle(fontSize: 20)),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(isCalendarExpanded ? Icons.expand_less : Icons.expand_more),
-                      onPressed: () => setState(() => isCalendarExpanded = !isCalendarExpanded),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      tooltip: "캘린더 새로고침",
-                      onPressed: _refreshCalendarData,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (isCalendarExpanded)
-            TableCalendar(
-              focusedDay: focusedDay,
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              selectedDayPredicate: (day) => isSameDay(selectedDay, day),
-              onDaySelected: (selected, focused) {
-                setState(() {
-                  selectedDay = selected;
-                  focusedDay = focused;
-                });
-              },
-              calendarFormat: CalendarFormat.month,
-              availableCalendarFormats: const {
-                CalendarFormat.month: 'Month'
-              },
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Colors.blueAccent.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                disabledTextStyle: const TextStyle(color: Colors.grey),
-              ),
-              enabledDayPredicate: (day) {
-                final normalized = DateTime.utc(day.year, day.month, day.day);
-                return statusMap.containsKey(normalized);
-              },
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, day, _) {
-                  final normalized = DateTime.utc(day.year, day.month, day.day);
-                  final statuses = statusMap[normalized];
-                  if (statuses == null) {
-                    return Center(
-                      child: Text(
-                        '${day.day}',
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
-                  int normalCount = statuses.where((e) => e == '정상').length;
-                  int abnormalCount = statuses.where((e) => e == '비정상').length;
-
-                  return Column(
-                    children: [
-                      Text('${day.day}', style: const TextStyle(color: Colors.black)),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (normalCount > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 2),
-                              child: CircleAvatar(
-                                radius: 8,
-                                backgroundColor: Colors.green,
-                                child: Text('$normalCount', style: const TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
-                            ),
-                          if (abnormalCount > 0)
-                            CircleAvatar(
-                              radius: 8,
-                              backgroundColor: Colors.red,
-                              child: Text('$abnormalCount', style: const TextStyle(fontSize: 10, color: Colors.white)),
-                            ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                ElevatedButton(
-                  onPressed: _handleMeasureButton,
-                  child: Text(Platform.isAndroid ? "측정하기" : "조회하기"),
-                ),
-                const SizedBox(height: 12),
-                Text("총 측정 횟수: $totalCount회", style: const TextStyle(fontSize: 16)),
-                Text("오늘 측정 횟수: $todayCount회", style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
-          if (isLoading)
-            const Expanded(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: selectedResults.length,
-                itemBuilder: (context, index) {
-                  final result = selectedResults[index];
-                  return Card(
-                    color: result.color.withOpacity(0.1),
-                    child: ListTile(
-                      title: Text("${result.dateTime.month}월 ${result.dateTime.day}일 ${result.dateTime.hour}시 ${result.dateTime.minute}분"),
-                      subtitle: Text(result.result, style: TextStyle(color: result.color)),
-                      trailing: TextButton(
-                        onPressed: () {},
-                        child: const Text("자세히"),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-**/

@@ -1,3 +1,4 @@
+/** Not USE **/
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -9,7 +10,7 @@ class MainCard extends StatelessWidget {
   final String unit;
   final bool chart;
   final bool bars;
-  final VoidCallback? onTap; // ✅ 터치 이벤트 핸들러 추가
+  final VoidCallback? onTap;
 
   const MainCard({
     super.key,
@@ -20,12 +21,12 @@ class MainCard extends StatelessWidget {
     required this.unit,
     this.chart = false,
     this.bars = false,
-    this.onTap, // ✅ 전달받기
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector( // ✅ 클릭 감지
+    return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),

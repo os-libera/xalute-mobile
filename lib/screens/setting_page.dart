@@ -34,7 +34,7 @@ class _SettingPageState extends State<SettingPage> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('username') ?? '';
-    final birthday = prefs.getString('birthday') ?? '';
+    final birthday = prefs.getString('birthDate') ?? '';
     final imagePath = prefs.getString('profileImagePath');
 
     setState(() {
@@ -45,16 +45,21 @@ class _SettingPageState extends State<SettingPage> {
       }
     });
 
-    Provider.of<EcgDataService>(context, listen: false).setUserName(name);
+    final ecgService = Provider.of<EcgDataService>(context, listen: false);
+    ecgService.setUserName(name);
+    ecgService.setBirthDate(birthday);
   }
 
   Future<void> _saveUserData() async {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString('username', _nameController.text);
-    await prefs.setString('birthday', _birthdayController.text);
+    await prefs.setString('birthDate', _birthdayController.text);
 
     final ecgService = Provider.of<EcgDataService>(context, listen: false);
+    ecgService.setUserName(_nameController.text);
+    ecgService.setBirthDate(_birthdayController.text);
+
     if (_profileImage != null) {
       await prefs.setString('profileImagePath', _profileImage!.path);
       ecgService.setProfileImagePath(_profileImage!.path);
@@ -62,7 +67,6 @@ class _SettingPageState extends State<SettingPage> {
       await prefs.remove('profileImagePath');
       ecgService.setProfileImagePath(null);
     }
-    ecgService.setUserName(_nameController.text);
 
     setState(() => _hasChanges = false);
 

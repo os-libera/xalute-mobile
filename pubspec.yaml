@@ -20,6 +20,7 @@ dependencies:
   provider: ^6.1.2
   image_picker: ^1.0.4
   flutter_native_splash: ^2.3.5
+  lottie: ^2.4.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1

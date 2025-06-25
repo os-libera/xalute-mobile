@@ -54,11 +54,15 @@ public class MainActivity extends FlutterActivity implements DataClient.OnDataCh
                 }
 
                 try {
+                    String name = call.argument("name");
+                    String birthDate = call.argument("birthDate");
+
                     JSONObject json = new JSONObject();
-                    json.put("name", "");
-                    json.put("birthDate", "20250501");
+                    json.put("name", name != null ? name : "");
+                    json.put("birthDate", birthDate != null ? birthDate : "");
                     json.put("action", "launch_app");
                     String payload = json.toString();
+                    Log.d("MainActivity", "📤 워치로 전송할 payload: " + payload);
 
                     messageClient.sendMessage(nodeId, START_APP_PATH, payload.getBytes())
                             .addOnSuccessListener(unused -> result.success(true))

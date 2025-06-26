@@ -8,12 +8,18 @@ class EcgEntry {
   final String result;
   final Color color;
   final String content;
+  final String txtPath;
+  final String jsonPath;
+  final String deviceType;
 
   EcgEntry({
     required this.dateTime,
     required this.result,
     required this.color,
     required this.content,
+    required this.txtPath,
+    required this.jsonPath,
+    required this.deviceType,
   });
 }
 
@@ -21,7 +27,7 @@ class EcgDataService extends ChangeNotifier {
   static const _channel = MethodChannel('com.example.health/ecg');
 
   EcgDataService() {
-    loadInitialData();
+    loadInitialData().then((_) => loadFromLocalFiles());
   }
 
   final List<EcgEntry> _entries = [];
@@ -29,10 +35,9 @@ class EcgDataService extends ChangeNotifier {
   String _userName = 'User';
   String? _profileImagePath;
   bool _isLoading = true;
-
   String? _birthDate;
-  String? get birthDate => _birthDate;
 
+  String? get birthDate => _birthDate;
   List<EcgEntry> get entries => _entries;
   String get userName => _userName;
   String? get profileImagePath => _profileImagePath;
@@ -118,20 +123,60 @@ class EcgDataService extends ChangeNotifier {
       for (var item in raw) {
         final dateTime = DateTime.parse(item['date'] as String);
         final resultStr = item['prediction'] as String;
-        final color = resultStr.contains('이상')
-            ? const Color(0xFFFB755B)
-            : Colors.grey[700]!;
+        final color = resultStr.contains('이상') ? const Color(0xFFFB755B) : Colors.grey[700]!;
         _entries.add(EcgEntry(
           dateTime: dateTime,
           result: resultStr,
           content: '',
           color: color,
+          txtPath: '',
+          jsonPath: '',
+          deviceType: Platform.isIOS ? 'iOS' : 'Android',
         ));
       }
-
       notifyListeners();
     } on PlatformException catch (e) {
       throw 'HealthKit 요청 실패: ${e.message}';
     }
+  }
+
+  Future<void> loadFromLocalFiles() async {
+    final dir = Directory('/data/user/0/com.example.xalute/app_flutter');
+    if (!dir.existsSync()) return;
+
+    final files = dir.listSync();
+
+    for (var file in files) {
+      if (file is File && file.path.endsWith('.txt')) {
+        final jsonPath = file.path.replaceAll('.txt', '.json');
+        final jsonFile = File(jsonPath);
+        if (!jsonFile.existsSync()) continue;
+
+        final fileName = file.uri.pathSegments.last;
+        final parts = fileName.split('_');
+        if (parts.length < 3) continue;
+
+        final timestampStr = parts[1];
+        final resultStr = parts[2].replaceAll('.txt', '');
+
+        final timestamp = DateTime.fromMillisecondsSinceEpoch(int.parse(timestampStr));
+        final result = resultStr == 'abnormal' ? '이상 소견 의심' : '정상';
+        final color = result == '이상 소견 의심' ? const Color(0xFFFB755B) : Colors.grey[700]!;
+        final txtContent = await file.readAsString();
+
+        final entry = EcgEntry(
+          dateTime: timestamp,
+          result: result,
+          color: color,
+          content: txtContent,
+          txtPath: file.path,
+          jsonPath: jsonPath,
+          deviceType: Platform.isIOS ? 'iOS' : 'Android',
+        );
+
+        _entries.add(entry);
+      }
+    }
+    notifyListeners();
   }
 }

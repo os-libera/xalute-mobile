@@ -109,13 +109,14 @@ public class MainActivity extends FlutterActivity implements DataClient.OnDataCh
                 Asset asset = dataMapItem.getDataMap().getAsset("ecg_data");
                 String result = dataMapItem.getDataMap().getString("result");
                 long timestamp = dataMapItem.getDataMap().getLong("timestamp");
+                String resultJson = dataMapItem.getDataMap().getString("result_json");  // ✅ 추가
 
-                readAsset(asset, result, timestamp);
+                readAsset(asset, result, timestamp, resultJson);  // ✅ 함수 파라미터에 resultJson 추가
             }
         }
     }
 
-    private void readAsset(Asset asset, String result, long timestamp) {
+    private void readAsset(Asset asset, String result, long timestamp, String resultJson) {
         Wearable.getDataClient(this).getFdForAsset(asset).addOnSuccessListener(assetFd -> {
             try (InputStream inputStream = assetFd.getInputStream()) {
                 if (inputStream != null) {
@@ -126,9 +127,10 @@ public class MainActivity extends FlutterActivity implements DataClient.OnDataCh
                     data.put("fileContent", content);
                     data.put("result", result);
                     data.put("timestamp", timestamp);
+                    data.put("result_json", resultJson);
 
                     methodChannel.invokeMethod("onEcgFileReceived", data.toString());
-                    Log.d("MainActivity", "📥 Flutter로 ECG 파일 및 결과 전달 완료");
+                    Log.d("MainActivity", "📥 Flutter로 ECG 파일, 결과 및 result_json 전달 완료");
                 }
             } catch (Exception e) {
                 Log.e("MainActivity", "❌ 파일 읽기 실패", e);

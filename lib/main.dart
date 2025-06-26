@@ -11,6 +11,7 @@ import 'screens/ecg_data_service.dart';
 import 'screens/ecg_page.dart';
 import 'screens/setting_page.dart';
 import 'screens/ecg_detail_page.dart';
+import 'screens/ecg_detail_page.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -48,21 +49,37 @@ void setupWatchListener() {
     debugPrint("👂 MethodChannel received call: ${call.method}");
     if (call.method == 'onEcgFileReceived') {
       final Map<String, dynamic> data = jsonDecode(call.arguments);
-      final String fileContent = data['fileContent'];
-      final Map<String, dynamic> resultObj = jsonDecode(data['result']);
-      final String result = resultObj['result'];
-      final int timestamp = data['timestamp'];
 
-      await saveReceivedEcg(fileContent, result, timestamp);
+      final String fileContent = data['fileContent'];
+      final String result = data['result'];
+      final int timestamp = data['timestamp'];
+      final Map<String, dynamic> resultJson = jsonDecode(data['result_json']);
+
+      await saveReceivedEcg(fileContent, result, timestamp, resultJson);
+
+      debugPrint("📈 R-peaks: ${resultJson['result']['r_peaks']}");
+      debugPrint("📉 distance_from_median: ${resultJson['result']['distance_from_median']}");
     }
   });
 }
 
-Future<void> saveReceivedEcg(String content, String result, int timestamp) async {
+Future<void> saveReceivedEcg(
+    String content,
+    String result,
+    int timestamp,
+    Map<String, dynamic> resultJson,
+    ) async {
   final dir = await getApplicationDocumentsDirectory();
+
   final fileName = 'ecg_${timestamp}_$result.txt';
   final file = File('${dir.path}/$fileName');
   await file.writeAsString(content);
+  debugPrint("✅ ECG 텍스트 저장 완료: ${file.path}");
+
+  final jsonFileName = 'ecg_${timestamp}_$result.json';
+  final jsonFile = File('${dir.path}/$jsonFileName');
+  await jsonFile.writeAsString(jsonEncode(resultJson));
+  debugPrint("✅ 분석 결과 JSON 저장 완료: ${jsonFile.path}");
 
   final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal();
   final mappedResult = result.toLowerCase() == 'normal' ? '정상' : '이상 소견 의심';
@@ -156,7 +173,13 @@ class HealthApp extends StatelessWidget {
       home: const EcgPage(),
       routes: {
         '/settings': (context) => const SettingPage(),
-        '/ecgDetail': (context) => const EcgDetailPage(),
+        '/ecgDetail': (context) => const EcgDetailPage(
+          txtPath: '',
+          jsonPath: '',
+          timestamp: DateTime.now(),
+          result: '',
+          deviceType: '',
+        ), // placeholder
       },
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

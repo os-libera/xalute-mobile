@@ -71,12 +71,16 @@ Future<void> saveReceivedEcg(
     ) async {
   final dir = await getApplicationDocumentsDirectory();
 
-  final fileName = 'ecg_${timestamp}_$result.txt';
+  final timestampStr = DateFormat('yyyyMMddHHmmss').format(
+    DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal(),
+  );
+
+  final fileName = 'ecg_${timestampStr}_$result.txt';
   final file = File('${dir.path}/$fileName');
   await file.writeAsString(content);
   debugPrint("✅ ECG 텍스트 저장 완료: ${file.path}");
 
-  final jsonFileName = 'ecg_${timestamp}_$result.json';
+  final jsonFileName = 'ecg_${timestampStr}_$result.json';
   final jsonFile = File('${dir.path}/$jsonFileName');
   await jsonFile.writeAsString(jsonEncode(resultJson));
   debugPrint("✅ 분석 결과 JSON 저장 완료: ${jsonFile.path}");
@@ -92,6 +96,9 @@ Future<void> saveReceivedEcg(
     result: mappedResult,
     color: mappedResult == '정상' ? Colors.green : const Color(0xFFFB755B),
     content: content,
+    txtPath: file.path,
+    jsonPath: jsonFile.path,
+    deviceType: Platform.isIOS ? 'iOS' : 'Android',
   ));
 }
 
@@ -129,7 +136,9 @@ Future<void> preloadSavedEcgFiles(EcgDataService service) async {
       final second = int.parse(timestampStr.substring(12, 14));
       final dateTime = DateTime(year, month, day, hour, minute, second);
 
-      final result = parts[2].toLowerCase() == 'normal' ? '정상' : '이상 소견 의심';
+      final resultCode = parts[2];
+      debugPrint("⚠️ resultCode: $resultCode");
+      final result = resultCode == 'normal' ? '정상' : '이상 소견 의심';
       final color = result == '정상' ? Colors.green : const Color(0xFFFB755B);
       final content = await file.readAsString();
 
@@ -140,11 +149,16 @@ Future<void> preloadSavedEcgFiles(EcgDataService service) async {
         continue;
       }
 
+      final jsonFilePath = '${dir.path}/ecg_${timestampStr}_$resultCode.json';
+
       service.addEntry(EcgEntry(
         dateTime: dateTime,
         result: result,
         color: color,
         content: content,
+        txtPath: file.path,
+        jsonPath: File(jsonFilePath).existsSync() ? jsonFilePath : '',
+        deviceType: Platform.isIOS ? 'iOS' : 'Android',
       ));
 
       loadedCount++;
@@ -171,15 +185,21 @@ class HealthApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const EcgPage(),
-      routes: {
-        '/settings': (context) => const SettingPage(),
-        '/ecgDetail': (context) => const EcgDetailPage(
-          txtPath: '',
-          jsonPath: '',
-          timestamp: DateTime.now(),
-          result: '',
-          deviceType: '',
-        ), // placeholder
+      onGenerateRoute: (settings) {
+        if (settings.name == '/ecgDetail') {
+          final entry = settings.arguments as EcgEntry;
+          return MaterialPageRoute(
+            builder: (context) => EcgDetailPage(
+              txtPath: entry.txtPath,
+              jsonPath: entry.jsonPath,
+              timestamp: entry.dateTime,
+              result: entry.result,
+              deviceType: entry.deviceType,
+              ),
+          );
+        }
+
+        return null;
       },
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

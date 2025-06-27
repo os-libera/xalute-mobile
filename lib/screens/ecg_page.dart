@@ -165,7 +165,7 @@ class _EcgPageState extends State<EcgPage> {
                               Text(
                                 "${ecgService.userName}님의",
                                 style: const TextStyle(
-                                    fontSize: 25, fontWeight: FontWeight.bold),
+                                    fontSize: 24, fontWeight: FontWeight.bold),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
@@ -174,7 +174,7 @@ class _EcgPageState extends State<EcgPage> {
                                   Text(
                                     "건강점수는 72점",
                                     style: TextStyle(
-                                      fontSize: 28,
+                                      fontSize: 24,
                                       color: Color(0xFFFB755B),
                                       fontWeight: FontWeight.bold,
                                     ),

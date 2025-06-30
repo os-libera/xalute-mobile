@@ -5,6 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'ecg_data_service.dart';
+import 'package:flutter_date_pickers/flutter_date_pickers.dart' as dp;
+import 'package:flutter/cupertino.dart';
+
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -76,19 +79,61 @@ class _SettingPageState extends State<SettingPage> {
   }
 
   Future<void> _selectBirthday() async {
-    final DateTime? picked = await showDatePicker(
+    DateTime initialDate = DateTime.tryParse(_birthdayController.text.replaceAll('.', '-')) ??
+        DateTime(2000, 1, 1);
+
+    DateTime selectedDate = initialDate;
+
+    await showModalBottomSheet(
       context: context,
-      initialDate: DateTime(2000),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-      locale: const Locale("ko", "KR"),
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext builder) {
+        return SizedBox(
+          height: 300,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      child: const Text('취소', style: TextStyle(color: Colors.grey)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    TextButton(
+                      child: const Text('확인', style: TextStyle(color: Colors.redAccent)),
+                      onPressed: () {
+                        setState(() {
+                          _birthdayController.text = DateFormat('yyyy.MM.dd').format(selectedDate);
+                          _hasChanges = true;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: initialDate,
+                  minimumDate: DateTime(1900),
+                  maximumDate: DateTime.now(),
+                  onDateTimeChanged: (DateTime newDate) {
+                    selectedDate = newDate;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    if (picked != null) {
-      setState(() {
-        _birthdayController.text = DateFormat('yyyy.MM.dd').format(picked);
-        _hasChanges = true;
-      });
-    }
   }
 
   Future<void> _pickImage() async {

@@ -122,26 +122,41 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
   Widget _buildLeadButtons() {
     final leadLabels = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: List.generate(12, (index) {
-        return ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: selectedLead == index ? const Color(0xFFFB755B) : Colors.white,
-            foregroundColor: selectedLead == index ? Colors.white : Colors.black,
-            side: BorderSide(color: Colors.grey.shade400),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-          onPressed: () {
-            setState(() {
-              selectedLead = index;
-              zoomScale = 1.0;
-            });
-          },
-          child: Text(
-            leadLabels[index],
-            style: const TextStyle(fontSize: 10), // 원하는 크기로 조정
+    return Column(
+      children: List.generate(3, (rowIndex) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(4, (colIndex) {
+              final index = rowIndex * 4 + colIndex;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: SizedBox(
+                  width: 80,
+                  height: 35,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: selectedLead == index ? const Color(0xFFFB755B) : Colors.white,
+                      foregroundColor: selectedLead == index ? Colors.white : Colors.black,
+                      side: BorderSide(color: Colors.grey.shade400),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: EdgeInsets.zero,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        selectedLead = index;
+                        zoomScale = 1.0;
+                      });
+                    },
+                    child: Text(
+                      leadLabels[index],
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  ),
+                ),
+              );
+            }),
           ),
         );
       }),
@@ -167,17 +182,20 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     final chartWidth = xMax * 50 * zoomScale;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onScaleStart: (details) {
         baseScale = zoomScale;
       },
       onScaleUpdate: (details) {
         setState(() {
-          final newScale = baseScale * details.scale;
+          //final newScale = baseScale * details.scale;
+          final newScale = baseScale * (1 + (details.scale - 1) * 10);
           zoomScale = newScale.clamp(1.0, 4.0);
         });
       },
-      child: SizedBox(
-        height: 300, // 고정 높이 → 위아래 스크롤 방지
+      child: Container(
+        height: 500,
+        color: Colors.transparent,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal, // 좌우만 스크롤 가능
           physics: const ClampingScrollPhysics(), // bounce 제거
@@ -226,7 +244,39 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                 ),
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(enabled: false),
+                rangeAnnotations: isFirstSignal
+                    ? RangeAnnotations(
+                  verticalRangeAnnotations: List.generate(distances.length ~/ 2, (i) {
+                    if (rPeaks.length <= i * 2 + 1 || rPeaks[i * 2 + 1] >= spots.length) return null;
+                    final x1 = spots[rPeaks[i * 2]].x;
+                    final x2 = spots[rPeaks[i * 2 + 1]].x;
+                    return VerticalRangeAnnotation(
+                      x1: x1,
+                      x2: x2,
+                      color: const Color(0x33FB755B),
+                    );
+                  }).whereType<VerticalRangeAnnotation>().toList(),
+                )
+                    : const RangeAnnotations(),
                 lineBarsData: [
+                  if (isFirstSignal)
+                    ...List.generate(distances.length ~/ 2, (i) {
+                      final x1 = rPeaks[i * 2];
+                      final x2 = rPeaks[i * 2 + 1];
+                      if (x2 >= spots.length) return null;
+                      final rangeSpots = spots
+                          .where((e) => e.x >= spots[x1].x && e.x <= spots[x2].x)
+                          .map((e) => FlSpot(e.x * zoomScale, e.y))
+                          .toList();
+                      return LineChartBarData(
+                        spots: rangeSpots,
+                        isCurved: false,
+                        barWidth: 0,
+                        color: Colors.transparent,
+                        dotData: FlDotData(show: false),
+                      );
+                    }).whereType<LineChartBarData>(),
+
                   LineChartBarData(
                     spots: adjustedSpots,
                     isCurved: false,
@@ -234,11 +284,12 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                     color: const Color(0xFFFB755B),
                     dotData: FlDotData(show: false),
                   ),
+
                   if (isFirstSignal)
                     LineChartBarData(
                       spots: rPeaks
                           .where((x) => x < spots.length)
-                          .map((x) => FlSpot(spots[x].x * zoomScale, spots[x].y))
+                          .map((x) => FlSpot(spots[x].x, spots[x].y))
                           .toList(),
                       isCurved: false,
                       color: Colors.transparent,
@@ -252,28 +303,6 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                         ),
                       ),
                     ),
-                  if (isFirstSignal)
-                    ...List.generate(distances.length ~/ 2, (i) {
-                      final x1 = rPeaks[i * 2];
-                      final x2 = rPeaks[i * 2 + 1];
-                      if (x2 >= spots.length) return null;
-                      final rangeSpots = spots
-                          .where((e) =>
-                      e.x >= spots[x1].x && e.x <= spots[x2].x)
-                          .map((e) => FlSpot(e.x * zoomScale, e.y))
-                          .toList();
-                      return LineChartBarData(
-                        spots: rangeSpots,
-                        isCurved: false,
-                        barWidth: 0,
-                        color: Colors.transparent,
-                        belowBarData: BarAreaData(
-                          show: true,
-                          color: const Color(0x44FB755B),
-                        ),
-                        dotData: FlDotData(show: false),
-                      );
-                    }).whereType<LineChartBarData>(),
                 ],
               ),
             ),
@@ -297,7 +326,10 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          //padding: const EdgeInsets.all(10),
+          //padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

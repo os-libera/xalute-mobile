@@ -100,6 +100,10 @@ Future<void> saveReceivedEcg(
     jsonPath: jsonFile.path,
     deviceType: Platform.isIOS ? 'iOS' : 'Android',
   ));
+
+  debugPrint("📂 저장된 파일 이름(txt): $fileName");
+  debugPrint("📂 저장된 파일 이름(json): $jsonFileName");
+
 }
 
 Future<void> preloadSavedEcgFiles(EcgDataService service) async {
@@ -185,6 +189,9 @@ class HealthApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const EcgPage(),
+      routes: {
+        '/settings': (context) => const SettingPage(),
+      },
       onGenerateRoute: (settings) {
         if (settings.name == '/ecgDetail') {
           final entry = settings.arguments as EcgEntry;

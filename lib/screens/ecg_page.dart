@@ -165,18 +165,24 @@ class _EcgPageState extends State<EcgPage> {
                               Text(
                                 "${ecgService.userName}님의",
                                 style: const TextStyle(
-                                    fontSize: 24, fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 24,
+                                  height: 32 / 24, // line-height 계산
+                                  letterSpacing: 0.0,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: const [
                                   Text(
                                     "건강점수는 72점",
-                                    style: TextStyle(
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
                                       fontSize: 24,
+                                      height: 32 / 24, // line-height 계산
+                                      letterSpacing: 0.0,
                                       color: Color(0xFFFB755B),
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   SizedBox(width: 6),
@@ -184,7 +190,14 @@ class _EcgPageState extends State<EcgPage> {
                                 ],
                               ),
                               const Text("어제보다 3점 올랐어요",
-                                  style: TextStyle(color: Colors.grey)),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 13,
+                                      height: 1.0,
+                                      letterSpacing: 0.0,
+                                      color: Colors.grey
+                                  ),
+                              ),
                             ],
                           ),
                         ),

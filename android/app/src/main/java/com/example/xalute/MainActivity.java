@@ -109,9 +109,9 @@ public class MainActivity extends FlutterActivity implements DataClient.OnDataCh
                 Asset asset = dataMapItem.getDataMap().getAsset("ecg_data");
                 String result = dataMapItem.getDataMap().getString("result");
                 long timestamp = dataMapItem.getDataMap().getLong("timestamp");
-                String resultJson = dataMapItem.getDataMap().getString("result_json");  // ✅ 추가
+                String resultJson = dataMapItem.getDataMap().getString("result_json");
 
-                readAsset(asset, result, timestamp, resultJson);  // ✅ 함수 파라미터에 resultJson 추가
+                readAsset(asset, result, timestamp, resultJson);
             }
         }
     }

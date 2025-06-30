@@ -117,28 +117,36 @@ class EcgDataService extends ChangeNotifier {
   }
 
   Future<void> fetchEcgData() async {
-    try {
-      final List<dynamic> raw = await _channel.invokeMethod('getECGData');
+  try {
+    final List<dynamic> raw = await _channel.invokeMethod('getECGData');
 
-      for (var item in raw) {
-        final dateTime = DateTime.parse(item['date'] as String);
-        final resultStr = item['prediction'] as String;
-        final color = resultStr.contains('이상') ? const Color(0xFFFB755B) : Colors.grey[700]!;
-        _entries.add(EcgEntry(
-          dateTime: dateTime,
-          result: resultStr,
-          content: '',
-          color: color,
-          txtPath: '',
-          jsonPath: '',
-          deviceType: Platform.isIOS ? 'iOS' : 'Android',
-        ));
-      }
-      notifyListeners();
-    } on PlatformException catch (e) {
-      throw 'HealthKit 요청 실패: ${e.message}';
+    for (var item in raw) {
+      final dateTime = DateTime.parse(item['date'] as String);
+
+      final rawResult = (item['prediction'] as String).toLowerCase();
+
+      final mappedResult = rawResult == 'normal'? '정상' : '이상 소견 의심';
+
+      final color = mappedResult.contains('이상 소견 의심') ? const Color(0xFFFB755B) : Colors.grey[700]!;
+
+      final txtPath  = item['txtPath']  as String? ?? '';
+      final jsonPath = item['jsonPath'] as String? ?? '';
+
+      _entries.add(EcgEntry(
+        dateTime: dateTime,
+        result: mappedResult,
+        content: '',
+        color: color,
+        txtPath: txtPath,
+        jsonPath: jsonPath,
+        deviceType: Platform.isIOS ? 'iOS' : 'Android',
+      ));
     }
+    notifyListeners();
+  } on PlatformException catch (e) {
+    throw 'HealthKit 요청 실패: ${e.message}';
   }
+}
 
   Future<void> loadFromLocalFiles() async {
     final dir = Directory('/data/user/0/com.example.xalute/app_flutter');

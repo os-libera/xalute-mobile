@@ -36,7 +36,15 @@ void main() async {
       final context = navigatorKey.currentContext!;
       final ecgService = Provider.of<EcgDataService>(context, listen: false);
       await preloadSavedEcgFiles(ecgService);
-    } else {
+    }
+    else if (Platform.isIOS) { //0628_iOS 전용
+    // debugPrint("iOS 환경 - fetchSavedEcgResults & preloadSavedEcgFiles 실행");
+    // 네이티브에 저장된 결과(JSON/TXT)를 가져오는 메서드
+    await fetchSavedEcgResults(ecgService);
+    // Watch에서 받은 파일도 (onEcgFileReceived 콜백) 로드
+    await preloadSavedEcgFiles(ecgService);
+    }
+    else {
       debugPrint("🟡 ECG 초기화 생략 (iOS)");
     }
   });
@@ -104,6 +112,34 @@ Future<void> saveReceivedEcg(
   debugPrint("📂 저장된 파일 이름(txt): $fileName");
   debugPrint("📂 저장된 파일 이름(json): $jsonFileName");
 
+}
+Future<void> fetchSavedEcgResults(EcgDataService service) async {
+  const channel = MethodChannel('com.example.health/ecg');
+  try {
+    final jsonString = await channel.invokeMethod<String>('getSavedECGResults');
+    if (jsonString == null) return;
+
+    final List<dynamic> list = jsonDecode(jsonString);
+    for (var item in list) {
+      final date = DateTime.parse(item['date'] as String).toLocal();
+      final result = (item['prediction'] as String).toLowerCase() == 'normal'
+        ? '정상'
+        : '이상 소견 의심';
+
+      service.addEntry(EcgEntry(
+        dateTime: date,
+        result: result,
+        color: result == '정상' ? Colors.green : const Color(0xFFFB755B),
+        content: '',              // actual content loaded by preloadSavedEcgFiles
+        txtPath: item['txtPath']  ?? '',
+        jsonPath: item['jsonPath']?? '',
+        deviceType: 'iOS',
+      ));
+    }
+    debugPrint("결과 불러오기 완료: ${list.length}건");
+  } on PlatformException catch (e) {
+    debugPrint("결과 로드 실패: ${e.message}");
+  }
 }
 
 Future<void> preloadSavedEcgFiles(EcgDataService service) async {

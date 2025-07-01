@@ -296,22 +296,29 @@ enum Storage {
         let name = prefs.string(forKey: "flutter.username") ?? "Unknown"
         let birth = prefs.string(forKey: "flutter.birthDate") ?? ""
         //timestamp mapping
-        let iso = ISO8601DateFormatter().string(from: sampleDate)
-        let safeIso = iso.replacingOccurrences(of: ":", with: "-")
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+        dateFormatter.timeZone = TimeZone.current
+        let isoLocal = dateFormatter.string(from: sampleDate)
 
-        // predictURL
+        let fileDate = sampleDate.addingTimeInterval(9 * 3600)
+        let fileNameFormatter = DateFormatter()
+        fileNameFormatter.dateFormat = "yyyy-MM-dd'T'HH-mm-ss"
+        fileNameFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        let safeIso = fileNameFormatter.string(from: fileDate)
+
         let boundary = "Boundary-\(UUID().uuidString)"
-        var rawForm = Data() //rawData
+        var rawForm = Data()
         rawForm.append("--\(boundary)\r\n".data(using: .utf8)!)
         rawForm.append("Content-Disposition: form-data; name=\"file\"; filename=\"raw_\(safeIso).txt\"\r\n".data(using: .utf8)!)
         rawForm.append("Content-Type: text/plain\r\n\r\n".data(using: .utf8)!)
         rawForm.append(rawTxt.data(using: .utf8)!)
         rawForm.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
 
-        // addData
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-        let subjectValue = "Patient/\(name): \(birth) \(dateFormatter.string(from: sampleDate))"
+        let subjectFormatter = DateFormatter()
+        subjectFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+        let subjectValue = "Patient/\(name): \(birth) \(subjectFormatter.string(from: sampleDate))"
         let bundle: [String: Any] = [
             "type": "batch",
             "resourceType": "Bundle",

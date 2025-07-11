@@ -115,9 +115,23 @@ class EcgDataService extends ChangeNotifier {
       return ed == d;
     }).toList();
   }
-
+ Future<bool> _requestAuthorization() async {
+  if (!Platform.isIOS) return true;  // Android 에선 바로 패스
+  try {
+    final granted = await _channel.invokeMethod<bool>('requestAuthorization');
+    return granted == true;
+  } on PlatformException {
+    return false;
+  }
+}
   Future<void> fetchEcgData() async {
   try {
+    if (Platform.isIOS) {
+      final ok = await _requestAuthorization();
+      if (!ok) {
+        throw 'HealthKit 권한이 필요합니다.';
+      }
+    }
     final List<dynamic> raw = await _channel.invokeMethod('getECGData');
 
     for (var item in raw) {

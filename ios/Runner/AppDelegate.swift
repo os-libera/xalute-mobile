@@ -66,16 +66,16 @@ enum Storage {
     private var lastFetchDate: Date?
     private var savedResults: [ECGUploadResult] = []
     private let targetFs: Double = 512.0
-
+    
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         //os_log("resultsURL: %{public}@ exists: %{public}@", type: .info,
-               //Storage.resultsURL.path, Storage.fileExists(at: Storage.resultsURL).description)
+        //Storage.resultsURL.path, Storage.fileExists(at: Storage.resultsURL).description)
         //os_log("lastDateURL: %{public}@ exists: %{public}@", type: .info,
-               //Storage.lastDateURL.path, Storage.fileExists(at: Storage.lastDateURL).description)
-
+        //Storage.lastDateURL.path, Storage.fileExists(at: Storage.lastDateURL).description)
+        
         // 로컬에 저장된 result 불러오기
         do {
             savedResults = try Storage.loadResults() ?? []
@@ -88,7 +88,7 @@ enum Storage {
         } catch {
             os_log("Error loading or initializing results file: %{public}@", type: .error, error.localizedDescription)
         }
-
+        
         // 마지막 처리 날짜 로드 (없으면 nil)
         do {
             lastFetchDate = try Storage.loadLastDate()
@@ -112,7 +112,7 @@ enum Storage {
         methodChannel?.setMethodCallHandler(handle)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-
+    
     // Flutter 호출 처리
     private func handle(call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -122,38 +122,38 @@ enum Storage {
             fetchAndUploadECG(result: result)
         case "getSavedECGResults": //flutter가 로컬의 json, txt를 읽도록
             do {
-                    let results = try Storage.loadResults() ?? []
-                    let fileURLs = try FileManager.default.contentsOfDirectory(at: Storage.docs, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-                    var outputs: [[String: Any]] = []
-                    for res in results {
-                        let safeIso = res.date.replacingOccurrences(of: ":", with: "-")
-                        let base = "ecg_\(safeIso)_\(res.prediction)"
-                        let txtURL  = fileURLs.first { $0.lastPathComponent == "\(base).txt" }
-                        let jsonURL = fileURLs.first { $0.lastPathComponent == "\(base).json" }
-                        /*
-                        if let t = txtURL?.path {
-                            os_log("▶︎ getSavedECGResults found TXT at: %{public}@", type: .info, t)
-                        } else {
-                            os_log("▶︎ getSavedECGResults no TXT for base: %{public}@", type: .info, base)
-                        }
-                        if let j = jsonURL?.path {
-                            os_log("▶︎ getSavedECGResults found JSON at: %{public}@", type: .info, j)
-                        } else {
-                            os_log("▶︎ getSavedECGResults no JSON for base: %{public}@", type: .info, base)
-                        }
-                        */
-                        var entry: [String: Any] = [
-                            "date": res.date,
-                            "prediction": res.prediction
-                        ]
-                        if let t = txtURL?.path { entry["txtPath"]  = t }
-                        if let j = jsonURL?.path { entry["jsonPath"] = j }
-                        outputs.append(entry)
-                    }
-
-                    let data = try JSONSerialization.data(withJSONObject: outputs, options: [])
-                    result(String(data: data, encoding: .utf8)!)
-                } catch {
+                let results = try Storage.loadResults() ?? []
+                let fileURLs = try FileManager.default.contentsOfDirectory(at: Storage.docs, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+                var outputs: [[String: Any]] = []
+                for res in results {
+                    let safeIso = res.date.replacingOccurrences(of: ":", with: "-")
+                    let base = "ecg_\(safeIso)_\(res.prediction)"
+                    let txtURL  = fileURLs.first { $0.lastPathComponent == "\(base).txt" }
+                    let jsonURL = fileURLs.first { $0.lastPathComponent == "\(base).json" }
+                    /*
+                     if let t = txtURL?.path {
+                     os_log("▶︎ getSavedECGResults found TXT at: %{public}@", type: .info, t)
+                     } else {
+                     os_log("▶︎ getSavedECGResults no TXT for base: %{public}@", type: .info, base)
+                     }
+                     if let j = jsonURL?.path {
+                     os_log("▶︎ getSavedECGResults found JSON at: %{public}@", type: .info, j)
+                     } else {
+                     os_log("▶︎ getSavedECGResults no JSON for base: %{public}@", type: .info, base)
+                     }
+                     */
+                    var entry: [String: Any] = [
+                        "date": res.date,
+                        "prediction": res.prediction
+                    ]
+                    if let t = txtURL?.path { entry["txtPath"]  = t }
+                    if let j = jsonURL?.path { entry["jsonPath"] = j }
+                    outputs.append(entry)
+                }
+                
+                let data = try JSONSerialization.data(withJSONObject: outputs, options: [])
+                result(String(data: data, encoding: .utf8)!)
+            } catch {
                 os_log("Error in getSavedECGResults: %{public}@", type: .error, error.localizedDescription)
                 result(FlutterError(code: "file_error", message: error.localizedDescription, details: nil))
             }
@@ -161,7 +161,7 @@ enum Storage {
             result(FlutterMethodNotImplemented)
         }
     }
-
+    
     // HealthKit 권한 요청
     private func requestAuthorization(result: @escaping FlutterResult) {
         guard HKHealthStore.isHealthDataAvailable() else {
@@ -172,10 +172,24 @@ enum Storage {
             result(success)
         }
     }
-
+    
     // ecg 서버로 전송
     private func fetchAndUploadECG(result: @escaping FlutterResult) {
         let ecgType = HKObjectType.electrocardiogramType()
+        let status = healthStore.authorizationStatus(for: ecgType)
+        if status == .notDetermined {
+            healthStore.requestAuthorization(toShare: [], read: [ecgType]) { success, error in
+                if success {
+                    // 권한이 허용되면 다시 fetchAndUploadECG 호출
+                    self.fetchAndUploadECG(result: result)
+                } else {
+                    result(FlutterError(code: "AUTH_ERROR",
+                                        message: error?.localizedDescription ?? "HealthKit 권한 요청 실패",
+                                        details: nil))
+                }
+            }
+            return
+        }
         let predicate: NSPredicate? = {
             if let last = lastFetchDate {
                 let start = last.addingTimeInterval(0.001)
@@ -197,15 +211,15 @@ enum Storage {
                 return result(FlutterError(code: "hk_error", message: error?.localizedDescription, details: nil))
             }
             os_log("[Fetch] total ecgSamples: %d", type: .info, ecgSamples.count)
-
+            
             var outputs: [[String: Any]] = []
             let group = DispatchGroup()
-
+            
             for sample in ecgSamples {
                 group.enter()
                 var rawTs: [Double] = []
                 var rawVs: [Double] = []
-
+                
                 let ecgQ = HKElectrocardiogramQuery(sample) { _, qr in
                     switch qr {
                     case .measurement(let m):
@@ -214,31 +228,25 @@ enum Storage {
                         rawTs.append(ts)
                         rawVs.append(uv)
                     case .done:
+                        if rawTs.count >= 2 {
+                                let dt = rawTs[1] - rawTs[0]
+                                let rawFs = 1.0 / dt
+                                os_log("sampling rate: %.2f Hz", type: .info, rawFs)
+                            }
                         // raw
                         let rawTxt = zip(rawVs, rawTs)
                             .map { String(format: "(%.3f, %.6f)", $0, $1) }
                             .joined(separator: " ")
-                        // sampled
-                        let (resTs, resVs) = self.resampleLinear(rawTs: rawTs, rawVal: rawVs, targetFs: self.targetFs)
-                        let sampledTxt = zip(resVs, resTs)
-                            .map { String(format: "(%.3f, %.6f)", $0, $1) }
-                            .joined(separator: " ")
-                        os_log(
-                          "[Fetch] Calling uploadAndSave for sample at %@",
-                          type: .info,
-                          String(describing: sample.startDate)
-                        )
-                        let iso = ISO8601DateFormatter().string(from: sample.startDate)
-                        self.uploadAndSave(rawTxt: rawTxt, sampledTxt: sampledTxt, sampleDate: sample.startDate) { prediction, txtPath, jsonPath in
+                        self.uploadAndSave(rawTxt: rawTxt, sampleDate: sample.startDate) { date, prediction, txtPath, jsonPath in
                             outputs.append([
-                                "date": iso,
+                                "date": date,
                                 "prediction": prediction,
                                 "txtPath": txtPath,
                                 "jsonPath": jsonPath
                             ])
                             group.leave()
                         }
-
+                        
                     case .error:
                         group.leave()
                     @unknown default:
@@ -247,7 +255,7 @@ enum Storage {
                 }
                 self.healthStore.execute(ecgQ)
             }
-
+            
             group.notify(queue: .main) {
                 if let lastSample = ecgSamples.last?.startDate {
                     self.lastFetchDate = lastSample
@@ -265,8 +273,9 @@ enum Storage {
         }
         healthStore.execute(query)
     }
-
+    
     // resampling
+    /*
     private func resampleLinear(rawTs: [Double], rawVal: [Double], targetFs: Double) -> ([Double], [Double]) {
         guard rawTs.count >= 2 else { return (rawTs, rawVal) }
         let start = rawTs.first!, end = rawTs.last!, dt = 1.0 / targetFs
@@ -284,34 +293,42 @@ enum Storage {
         }
         return (tsArr, valArr)
     }
-
+    */
     private func uploadAndSave(
         rawTxt: String,
-        sampledTxt: String,
         sampleDate: Date,
-        completion: @escaping (_ prediction: String, _ txtPath: String, _ jsonPath: String) -> Void
+        completion: @escaping (_ date: String, _ prediction: String, _ txtPath: String, _ jsonPath: String) -> Void
     ) {
         //setting_page의 이름과 생일을 load
         let prefs = UserDefaults.standard
         let name = prefs.string(forKey: "flutter.username") ?? "Unknown"
         let birth = prefs.string(forKey: "flutter.birthDate") ?? ""
-        //timestamp mapping
-        let iso = ISO8601DateFormatter().string(from: sampleDate)
-        let safeIso = iso.replacingOccurrences(of: ":", with: "-")
+        //0701start_시간대 변경하여 저장
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+        dateFormatter.timeZone = TimeZone.current
+        let isoLocal = dateFormatter.string(from: sampleDate)
 
-        // predictURL
+        let fileDate = sampleDate.addingTimeInterval(9 * 3600)
+        let fileNameFormatter = DateFormatter()
+        fileNameFormatter.dateFormat = "yyyy-MM-dd'T'HH-mm-ss"
+        fileNameFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        let safeIso = fileNameFormatter.string(from: fileDate)
+
         let boundary = "Boundary-\(UUID().uuidString)"
-        var rawForm = Data() //rawData
+        var rawForm = Data()
         rawForm.append("--\(boundary)\r\n".data(using: .utf8)!)
         rawForm.append("Content-Disposition: form-data; name=\"file\"; filename=\"raw_\(safeIso).txt\"\r\n".data(using: .utf8)!)
         rawForm.append("Content-Type: text/plain\r\n\r\n".data(using: .utf8)!)
         rawForm.append(rawTxt.data(using: .utf8)!)
         rawForm.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
 
-        // addData
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-        let subjectValue = "Patient/\(name): \(birth) \(dateFormatter.string(from: sampleDate))"
+        let subjectFormatter = DateFormatter()
+        subjectFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+        let subjectValue = "Patient/\(name): \(birth) \(subjectFormatter.string(from: sampleDate))"
+        //0701end_시간대 변경하여 저장
+
         let bundle: [String: Any] = [
             "type": "batch",
             "resourceType": "Bundle",
@@ -319,7 +336,7 @@ enum Storage {
                 "request": ["url": "Observation", "method": "POST"],
                 "resource": [
                     "resourceType": "Observation",
-                    "id": "\(safeIso)", //sampledData
+                    "id": "\(safeIso)",
                     "component": [[
                         "code": ["coding": [
                             ["display": "MDC_ECG_ELEC_POTL_I"],
@@ -328,7 +345,7 @@ enum Storage {
                         "valueSampledData": [
                             "origin": ["value": 55],
                             "period": 1.0 / targetFs * 1000,
-                            "data": sampledTxt,
+                            "data": rawTxt,
                             "dimensions": 2
                         ]
                     ]],
@@ -339,18 +356,17 @@ enum Storage {
             ]]
         ]
         let jsonData = try! JSONSerialization.data(withJSONObject: bundle, options: [])
-
-        // 각 서버로 데이터 전송
+        
         let urls = [predictURL, addDataURL]
         let group = DispatchGroup()
         var finalPrediction = "unknown"
         var predict1ResponseData: Data?
-
+        
         for url in urls {
             group.enter()
             var req = URLRequest(url: url)
             req.httpMethod = "POST"
-
+            
             if url == predictURL {
                 req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
                 req.httpBody = rawForm
@@ -358,60 +374,35 @@ enum Storage {
                 req.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 req.httpBody = jsonData
             }
-
+            
             URLSession.shared.dataTask(with: req) { data, _, error in
                 defer { group.leave() }
-                if let error = error {
-                    os_log("[ERROR] Network error on %@: %@", type: .error, url.absoluteString, error.localizedDescription)
-                    return
-                }
-                guard let data = data else {
-                    os_log("[ERROR] No data received from %@", type: .error, url.absoluteString)
-                    return
-                }
-                let responseBody = String(data: data, encoding: .utf8) ?? "<Non-UTF8 data>"
-                if url == self.predictURL {
-                    os_log("[PREDICT] Received response: %{public}@", type: .info, responseBody)
+                if let data = data, url == self.predictURL {
                     predict1ResponseData = data
                     if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let resultDict = json["result"] as? [String: Any],
                        let distances = resultDict["distance_from_median"] as? [Any] {
                         finalPrediction = distances.isEmpty ? "normal" : "abnormal"
                     }
-                } else {
-                    os_log("[addData] Received response: %{public}@", type: .info, responseBody)
                 }
             }.resume()
         }
-
-        // save txt, json
+        
         group.notify(queue: .main) {
             let baseName = "ecg_\(safeIso)_\(finalPrediction)"
-
-            // txt
+            let rawURL = Storage.docs.appendingPathComponent("\(baseName)_raw.txt")
+            try? rawTxt.data(using: .utf8)?.write(to: rawURL)
             let txtURL = Storage.docs.appendingPathComponent("\(baseName).txt")
-            do {
-                try sampledTxt.data(using: .utf8)?.write(to: txtURL)
-                os_log("[uploadAndSave] Saved sampled ECG txt to %@", type: .info, txtURL.path)
-            } catch {
-                os_log("[uploadAndSave] Failed to save TXT: %{public}@", type: .error, error.localizedDescription)
-            }
-
-            // json(by predict)
+            try? rawTxt.data(using: .utf8)?.write(to: txtURL)
+            
             var jsonPath = ""
             if let data = predict1ResponseData {
                 let jsonURL = Storage.docs.appendingPathComponent("\(baseName).json")
-                do {
-                    try data.write(to: jsonURL)
-                    os_log("[uploadAndSave] Saved predict1 JSON to %@", type: .info, jsonURL.path)
-                    jsonPath = jsonURL.path
-                } catch {
-                    os_log("[uploadAndSave] Failed to save JSON: %{public}@", type: .error, error.localizedDescription)
-                }
+                try? data.write(to: jsonURL)
+                jsonPath = jsonURL.path
             }
-
-            os_log("[uploadAndSave] All done, returning prediction: %@", type: .info, finalPrediction)
-            completion(finalPrediction, txtURL.path, jsonPath)
+            os_log("▶️ Flutter로 전송되는 date: %{public}@", isoLocal)
+            completion(isoLocal, finalPrediction, txtURL.path, jsonPath)
         }
     }
 }

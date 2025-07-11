@@ -199,7 +199,7 @@ class _SettingPageState extends State<SettingPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFE),
       appBar: AppBar(
-        title: const Text("Setting"),
+        title: const Text("Setting", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold,),),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,

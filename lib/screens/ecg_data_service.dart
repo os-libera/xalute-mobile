@@ -116,7 +116,7 @@ class EcgDataService extends ChangeNotifier {
     }).toList();
   }
  Future<bool> _requestAuthorization() async {
-  if (!Platform.isIOS) return true;  // Android 에선 바로 패스
+  if (!Platform.isIOS) return true;
   try {
     final granted = await _channel.invokeMethod<bool>('requestAuthorization');
     return granted == true;

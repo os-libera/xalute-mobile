@@ -49,7 +49,7 @@ public class MainActivity extends FlutterActivity implements DataClient.OnDataCh
                 result.success(nodeId != null);
             } else if (call.method.equals("launchWatchApp")) {
                 if (nodeId == null) {
-                    result.error("NO_NODE", "워치가 연결되지 않았습니다", null);
+                    result.error("NO_NODE", "Watch is not connected.", null);
                     return;
                 }
 

@@ -61,10 +61,10 @@ class _EcgPageState extends State<EcgPage> {
             context: context,
             builder: (context) =>
                 AlertDialog(
-                  content: const Text("워치와의 연결을 확인해주세요."),
+                  content: const Text("Please check the connection to the watch."),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context),
-                        child: const Text("확인"))
+                        child: const Text("OK"))
                   ],
                 ),
           );
@@ -79,7 +79,7 @@ class _EcgPageState extends State<EcgPage> {
           context: context,
           builder: (context) =>
               AlertDialog(
-                content: const Text("워치에서 ECG 측정을 진행하시겠습니까?"),
+                content: const Text("Would you like to start ECG measurement on the watch?"),
                 actions: [
                   TextButton(
                     onPressed: () async {
@@ -90,16 +90,16 @@ class _EcgPageState extends State<EcgPage> {
                           'birthDate': birthDate,
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("워치 앱 실행됨")));
+                            const SnackBar(content: Text("Watch app launched")));
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("워치 앱 실행 실패")));
+                            const SnackBar(content: Text("Failed to launch watch app")));
                       }
                     },
-                    child: const Text("확인"),
+                    child: const Text("Confirm"),
                   ),
                   TextButton(onPressed: () => Navigator.pop(context),
-                      child: const Text("취소")),
+                      child: const Text("Cancel")),
                 ],
               ),
         );
@@ -113,7 +113,7 @@ class _EcgPageState extends State<EcgPage> {
             .fetchEcgData();
       } catch (e, stack) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('데이터 조회 실패: $e')));
+            .showSnackBar(SnackBar(content: Text('Failed to fetch ECG data: $e')));
       } finally {
         if (mounted) setState(() => isLoading = false);
       }
@@ -163,11 +163,11 @@ class _EcgPageState extends State<EcgPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "${ecgService.userName}님의",
+                                "${ecgService.userName}'s",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 24,
-                                  height: 32 / 24, // line-height 계산
+                                  height: 32 / 24,
                                   letterSpacing: 0.0,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -176,7 +176,7 @@ class _EcgPageState extends State<EcgPage> {
                               Row(
                                 children: const [
                                   Text(
-                                    "건강점수는 72점",
+                                    "Health score is 72",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 24,
@@ -189,7 +189,7 @@ class _EcgPageState extends State<EcgPage> {
                                   Icon(Icons.chevron_right),
                                 ],
                               ),
-                              const Text("어제보다 3점 올랐어요",
+                              const Text("Up 3 points form yesterday",
                                   style: TextStyle(
                                       fontWeight: FontWeight.w400,
                                       fontSize: 13,
@@ -235,7 +235,7 @@ class _EcgPageState extends State<EcgPage> {
                         Row(
                           children: [
                             Text(
-                              "${focusedDay.year}년 ${focusedDay.month}월",
+                              "${focusedDay.year}.${focusedDay.month}",
                               style: const TextStyle(
                                   fontSize: 20, fontWeight: FontWeight.bold),
                             ),
@@ -263,7 +263,7 @@ class _EcgPageState extends State<EcgPage> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.refresh),
-                          tooltip: '새로고침',
+                          tooltip: 'Refresh',
                           onPressed: _refreshCalendarData,
                         ),
                       ],
@@ -281,15 +281,15 @@ class _EcgPageState extends State<EcgPage> {
                         children: [
                           Column(children: [
                             const Text(
-                                "총 측정횟수", style: TextStyle(fontSize: 14)),
-                            Text("${monthResults.length}회",
+                                "Total measurement", style: TextStyle(fontSize: 14)),
+                            Text("${monthResults.length} times",
                                 style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold))
                           ]),
                           Column(children: [
                             const Text(
-                                "이상 소견 의심", style: TextStyle(fontSize: 14)),
-                            Text("$abnormalMonthTotal회", style: const TextStyle(
+                                "Suspected Abnormality", style: TextStyle(fontSize: 14)),
+                            Text("$abnormalMonthTotal times", style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold))
                           ])
                         ],
@@ -410,11 +410,11 @@ class _EcgPageState extends State<EcgPage> {
                       children: [
                         Icon(Icons.circle, color: Color(0xFFFB755B), size: 8),
                         SizedBox(width: 4),
-                        Text("이상 소견 의심", style: TextStyle(fontSize: 12)),
+                        Text("Suspected Abnormality", style: TextStyle(fontSize: 12)),
                         SizedBox(width: 16),
                         Icon(Icons.circle, color: Colors.grey, size: 8),
                         SizedBox(width: 4),
-                        Text("전체 측정 횟수", style: TextStyle(fontSize: 12)),
+                        Text("Total Measurement", style: TextStyle(fontSize: 12)),
                       ],
                     ),
                   ),
@@ -481,7 +481,7 @@ class _EcgPageState extends State<EcgPage> {
                         ),
                         onPressed: _handleMeasureButton,
                         child: Text(
-                          Platform.isIOS ? "데이터 조회" : "측정 시작",
+                          Platform.isIOS ? "Fetch ECG" : "Start Measurement",
                           style: const TextStyle(fontSize: 16,
                               color: Colors.white),
                         ),
@@ -508,7 +508,7 @@ class _EcgPageState extends State<EcgPage> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'ECG 데이터를 조회하고 있어요\n앱을 끄지 말고 잠시만 기다려주세요',
+                      'Fetching ECG data\nPlease wait without closing the app',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),

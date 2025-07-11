@@ -54,7 +54,6 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       if (!txtFile.existsSync()) {
         debugPrint('❌ TXT 파일이 존재하지 않음');
       } else {
-        // Signal 1: txt에서 읽기
         final txtContent = await txtFile.readAsString();
         final rawRecords = txtContent.trim().split(') (');
 
@@ -64,7 +63,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           final parts = clean.split(',');
           if (parts.length == 2) {
             final y = double.tryParse(parts[0].trim());
-            final x = double.tryParse(parts[1].trim()); // 이미 초 단위임
+            final x = double.tryParse(parts[1].trim());
             if (x != null && y != null) {
               txtSpots.add(FlSpot(x, y));
             }
@@ -75,7 +74,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
         final baseX = txtSpots.first.x;
         final convertedSpots = txtSpots.map((spot) {
-          return FlSpot(spot.x - baseX, spot.y); // 0초부터 시작
+          return FlSpot(spot.x - baseX, spot.y);
         }).toList();
 
         leadData[0] = convertedSpots;
@@ -91,11 +90,11 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
         if (response.statusCode == 200) {
           final jsonData = jsonDecode(response.body);
           final resultArray = jsonData['result'];
-          final leads = resultArray[0][0].sublist(3, 14); // signal 2~12
+          final leads = resultArray[0][0].sublist(3, 14);
           for (int i = 0; i < 11; i++) {
             leadData[i + 1] = List.generate(
               leads[i].length,
-                  (j) => FlSpot(j * (10.0 / 512.0), leads[i][j].toDouble()), // ✅ 10초 분포
+                  (j) => FlSpot(j * (10.0 / 512.0), leads[i][j].toDouble()),
             );
           }
         } else {
@@ -318,7 +317,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('측정 결과', style: TextStyle(color: Colors.black)),
+        title: const Text('측정 결과', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.black),
         centerTitle: true,
       ),

@@ -245,6 +245,7 @@ class HealthApp extends StatelessWidget {
         return null;
       },
       debugShowCheckedModeBanner: false,
+      locale: const Locale('en', 'US'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

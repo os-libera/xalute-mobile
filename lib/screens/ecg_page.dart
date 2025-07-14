@@ -423,9 +423,10 @@ class _EcgPageState extends State<EcgPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: selectedResults.map((entry) {
-                        final formatted = DateFormat('M월 d일 HH시 mm분').format(
+                        final formatted = DateFormat('MM d, HH:mm').format(
                             entry.dateTime);
                         final isAbnormal = entry.result == '이상 소견 의심';
+                        final resultText = isAbnormal ? 'Suspected Abnormality' : 'Normal';
 
                         return InkWell(
                           onTap: () {
@@ -447,7 +448,7 @@ class _EcgPageState extends State<EcgPage> {
                                 Row(
                                   children: [
                                     Text(
-                                      entry.result,
+                                      resultText,
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,

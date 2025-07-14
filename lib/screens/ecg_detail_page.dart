@@ -317,7 +317,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('측정 결과', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
+        title: const Text('Measurement Result', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.black),
         centerTitle: true,
       ),
@@ -342,23 +342,23 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(DateFormat('yyyy.MM.dd (E) HH시 mm분', 'ko_KR').format(widget.timestamp)),
+                  const Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(DateFormat('yyyy.MM.dd (EEE) HH:mm', 'en_US').format(widget.timestamp)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('결과', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(widget.result),
+                  const Text('Result', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(widget.result == '이상 소견 의심' ? 'Suspected Abnormality' : 'Normal'),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('측정 기기', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Device Type', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(widget.deviceType),
                 ],
               ),

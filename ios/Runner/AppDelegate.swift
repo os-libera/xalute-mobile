@@ -55,9 +55,6 @@ enum Storage {
         let data = try Data(contentsOf: resultsURL)
         return try JSONDecoder().decode([ECGUploadResult].self, from: data)
     }
-}
-
-@main
 @objc class AppDelegate: FlutterAppDelegate {
     private let healthStore = HKHealthStore()
     private var methodChannel: FlutterMethodChannel?
@@ -66,7 +63,8 @@ enum Storage {
     private var lastFetchDate: Date?
     private var savedResults: [ECGUploadResult] = []
     private let targetFs: Double = 512.0
-    
+    private let rrThreshold: Double = 0.31
+
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -75,7 +73,7 @@ enum Storage {
         //Storage.resultsURL.path, Storage.fileExists(at: Storage.resultsURL).description)
         //os_log("lastDateURL: %{public}@ exists: %{public}@", type: .info,
         //Storage.lastDateURL.path, Storage.fileExists(at: Storage.lastDateURL).description)
-        
+
         // 로컬에 저장된 result 불러오기
         do {
             savedResults = try Storage.loadResults() ?? []
@@ -88,7 +86,7 @@ enum Storage {
         } catch {
             os_log("Error loading or initializing results file: %{public}@", type: .error, error.localizedDescription)
         }
-        
+
         // 마지막 처리 날짜 로드 (없으면 nil)
         do {
             lastFetchDate = try Storage.loadLastDate()
@@ -112,7 +110,7 @@ enum Storage {
         methodChannel?.setMethodCallHandler(handle)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-    
+
     // Flutter 호출 처리
     private func handle(call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -123,25 +121,25 @@ enum Storage {
         case "getSavedECGResults": //flutter가 로컬의 json, txt를 읽도록
             do {
                 let results = try Storage.loadResults() ?? []
-                let fileURLs = try FileManager.default.contentsOfDirectory(at: Storage.docs, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+                let fileURLs = try FileManager.default
+                    .contentsOfDirectory(at: Storage.docs,
+                                         includingPropertiesForKeys: nil,
+                                         options: .skipsHiddenFiles)
+                for url in fileURLs {
+                    os_log("📄 Documents 파일: %{public}@", type: .info, url.lastPathComponent)
+                }
+
                 var outputs: [[String: Any]] = []
                 for res in results {
-                    let safeIso = res.date.replacingOccurrences(of: ":", with: "-")
-                    let base = "ecg_\(safeIso)_\(res.prediction)"
+                    // 1) 밀리초 이하(.xxx) 제거
+                    let dateWithoutFraction = res.date.components(separatedBy: ".").first ?? res.date
+                    // 2) ":" → "-" 치환
+                    let safeIso = dateWithoutFraction.replacingOccurrences(of: ":", with: "-")
+
+                    let baseName = "ecg_\(safeIso)_\(finalPrediction)"
                     let txtURL  = fileURLs.first { $0.lastPathComponent == "\(base).txt" }
                     let jsonURL = fileURLs.first { $0.lastPathComponent == "\(base).json" }
-                    /*
-                     if let t = txtURL?.path {
-                     os_log("▶︎ getSavedECGResults found TXT at: %{public}@", type: .info, t)
-                     } else {
-                     os_log("▶︎ getSavedECGResults no TXT for base: %{public}@", type: .info, base)
-                     }
-                     if let j = jsonURL?.path {
-                     os_log("▶︎ getSavedECGResults found JSON at: %{public}@", type: .info, j)
-                     } else {
-                     os_log("▶︎ getSavedECGResults no JSON for base: %{public}@", type: .info, base)
-                     }
-                     */
+
                     var entry: [String: Any] = [
                         "date": res.date,
                         "prediction": res.prediction
@@ -150,18 +148,19 @@ enum Storage {
                     if let j = jsonURL?.path { entry["jsonPath"] = j }
                     outputs.append(entry)
                 }
-                
+
                 let data = try JSONSerialization.data(withJSONObject: outputs, options: [])
                 result(String(data: data, encoding: .utf8)!)
             } catch {
                 os_log("Error in getSavedECGResults: %{public}@", type: .error, error.localizedDescription)
                 result(FlutterError(code: "file_error", message: error.localizedDescription, details: nil))
             }
+
         default:
             result(FlutterMethodNotImplemented)
         }
     }
-    
+
     // HealthKit 권한 요청
     private func requestAuthorization(result: @escaping FlutterResult) {
         guard HKHealthStore.isHealthDataAvailable() else {
@@ -172,7 +171,7 @@ enum Storage {
             result(success)
         }
     }
-    
+
     // ecg 서버로 전송
     private func fetchAndUploadECG(result: @escaping FlutterResult) {
         let ecgType = HKObjectType.electrocardiogramType()
@@ -211,15 +210,15 @@ enum Storage {
                 return result(FlutterError(code: "hk_error", message: error?.localizedDescription, details: nil))
             }
             os_log("[Fetch] total ecgSamples: %d", type: .info, ecgSamples.count)
-            
+
             var outputs: [[String: Any]] = []
             let group = DispatchGroup()
-            
+
             for sample in ecgSamples {
                 group.enter()
                 var rawTs: [Double] = []
                 var rawVs: [Double] = []
-                
+
                 let ecgQ = HKElectrocardiogramQuery(sample) { _, qr in
                     switch qr {
                     case .measurement(let m):
@@ -246,7 +245,7 @@ enum Storage {
                             ])
                             group.leave()
                         }
-                        
+
                     case .error:
                         group.leave()
                     @unknown default:
@@ -255,7 +254,7 @@ enum Storage {
                 }
                 self.healthStore.execute(ecgQ)
             }
-            
+
             group.notify(queue: .main) {
                 if let lastSample = ecgSamples.last?.startDate {
                     self.lastFetchDate = lastSample
@@ -273,7 +272,7 @@ enum Storage {
         }
         healthStore.execute(query)
     }
-    
+
     // resampling
     /*
     private func resampleLinear(rawTs: [Double], rawVal: [Double], targetFs: Double) -> ([Double], [Double]) {
@@ -356,17 +355,17 @@ enum Storage {
             ]]
         ]
         let jsonData = try! JSONSerialization.data(withJSONObject: bundle, options: [])
-        
+
         let urls = [predictURL, addDataURL]
         let group = DispatchGroup()
         var finalPrediction = "unknown"
         var predict1ResponseData: Data?
-        
+
         for url in urls {
             group.enter()
             var req = URLRequest(url: url)
             req.httpMethod = "POST"
-            
+
             if url == predictURL {
                 req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
                 req.httpBody = rawForm
@@ -374,35 +373,52 @@ enum Storage {
                 req.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 req.httpBody = jsonData
             }
-            
+
             URLSession.shared.dataTask(with: req) { data, _, error in
                 defer { group.leave() }
                 if let data = data, url == self.predictURL {
                     predict1ResponseData = data
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                    /**if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let resultDict = json["result"] as? [String: Any],
                        let distances = resultDict["distance_from_median"] as? [Any] {
                         finalPrediction = distances.isEmpty ? "normal" : "abnormal"
+                    **/
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let resultDict = json["result"] as? [String: Any],
+                       let distances = resultDict["distance_from_median"] as? [Any] {
+
+                        // distance > 0.31 abnormal
+                        let hasAbnormal = distances.contains {
+                            guard let d = $0 as? Double else { return false }
+                            return d > rrThreshold
+                        }
+                        finalPrediction = hasAbnormal ? "abnormal" : "normal"
+                    } else {
+                        // distance_from_median X normal
+                        finalPrediction = "normal"
                     }
                 }
             }.resume()
         }
-        
+        //0717
         group.notify(queue: .main) {
             let baseName = "ecg_\(safeIso)_\(finalPrediction)"
+
+            // 서버 전송용 raw 데이터만 저장
             let rawURL = Storage.docs.appendingPathComponent("\(baseName)_raw.txt")
             try? rawTxt.data(using: .utf8)?.write(to: rawURL)
-            let txtURL = Storage.docs.appendingPathComponent("\(baseName).txt")
-            try? rawTxt.data(using: .utf8)?.write(to: txtURL)
-            
+
+            // 예측 결과 JSON 저장
             var jsonPath = ""
             if let data = predict1ResponseData {
                 let jsonURL = Storage.docs.appendingPathComponent("\(baseName).json")
                 try? data.write(to: jsonURL)
                 jsonPath = jsonURL.path
             }
+
             os_log("▶️ Flutter로 전송되는 date: %{public}@", isoLocal)
-            completion(isoLocal, finalPrediction, txtURL.path, jsonPath)
+            completion(isoLocal, finalPrediction, rawURL.path, jsonPath)
         }
+
     }
 }

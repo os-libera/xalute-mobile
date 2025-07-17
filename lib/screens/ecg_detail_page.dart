@@ -34,7 +34,6 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
   double zoomScale = 1.0;
   final ScrollController _scrollController = ScrollController();
   final TransformationController _transformationController = TransformationController();
-  static const double rrThreshold = 0.31;
 
   @override
   void initState() {
@@ -244,7 +243,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                 ),
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(enabled: false),
-                /**rangeAnnotations: isFirstSignal
+                rangeAnnotations: isFirstSignal
                     ? RangeAnnotations(
                   verticalRangeAnnotations: List.generate(distances.length ~/ 2, (i) {
                     if (rPeaks.length <= i * 2 + 1 || rPeaks[i * 2 + 1] >= spots.length) return null;
@@ -258,43 +257,18 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                   }).whereType<VerticalRangeAnnotation>().toList(),
                 )
                     : const RangeAnnotations(),
-                    **/
-                rangeAnnotations: isFirstSignal
-                    ? RangeAnnotations(
-                  verticalRangeAnnotations: List.generate(distances.length, (i) {
-                    if (distances[i] <= rrThreshold) return null;
-
-                    if (i + 1 >= rPeaks.length) return null;
-                    if (rPeaks[i + 1] >= spots.length) return null;
-
-                    final x1 = spots[rPeaks[i]].x;
-                    final x2 = spots[rPeaks[i + 1]].x;
-
-                    return VerticalRangeAnnotation(
-                      x1: x1,
-                      x2: x2,
-                      color: const Color(0x55FB755B),
-                    );
-                  }).whereType<VerticalRangeAnnotation>().toList(),
-                )
-                    : const RangeAnnotations(),
-
                 lineBarsData: [
                   if (isFirstSignal)
-                    ...List.generate(distances.length, (i) {
-                      if (distances[i] <= rrThreshold) return null;           
-                      if (i + 1 >= rPeaks.length)      return null;
-                      final x1 = rPeaks[i];
-                      final x2 = rPeaks[i + 1];
+                    ...List.generate(distances.length ~/ 2, (i) {
+                      final x1 = rPeaks[i * 2];
+                      final x2 = rPeaks[i * 2 + 1];
                       if (x2 >= spots.length) return null;
-
-                      final abnormalSpots = spots
+                      final rangeSpots = spots
                           .where((e) => e.x >= spots[x1].x && e.x <= spots[x2].x)
                           .map((e) => FlSpot(e.x * zoomScale, e.y))
                           .toList();
-
                       return LineChartBarData(
-                        spots: abnormalSpots,
+                        spots: rangeSpots,
                         isCurved: false,
                         barWidth: 0,
                         color: Colors.transparent,

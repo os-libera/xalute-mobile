@@ -154,6 +154,7 @@ enum Storage {
             } catch {
                 os_log("Error in getSavedECGResults: %{public}@", type: .error, error.localizedDescription)
                 result(FlutterError(code: "file_error", message: error.localizedDescription, details: nil))
+                result(FlutterError(code: "file_error", message: error.localizedDescription, details: nil))
             }
 
         default:
@@ -384,17 +385,14 @@ enum Storage {
                         finalPrediction = distances.isEmpty ? "normal" : "abnormal"
                     **/
                     if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let resultDict = json["result"] as? [String: Any],
-                       let distances = resultDict["distance_from_median"] as? [Any] {
+                       let resultDict = json["result"] as? [String: Any] {
 
-                        // distance > 0.31 abnormal
-                        let hasAbnormal = distances.contains {
-                            guard let d = $0 as? Double else { return false }
-                            return d > rrThreshold
-                        }
-                        finalPrediction = hasAbnormal ? "abnormal" : "normal"
+                        let abnormalDistances = (resultDict["distance_from_median"] as? [Any])?
+                            .compactMap { $0 as? Double }
+                            .filter { $0 > rrThreshold } ?? []
+
+                        finalPrediction = abnormalDistances.isEmpty ? "normal" : "abnormal"
                     } else {
-                        // distance_from_median X normal
                         finalPrediction = "normal"
                     }
                 }

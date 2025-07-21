@@ -378,25 +378,19 @@ enum Storage {
                 
                 URLSession.shared.dataTask(with: req) { data, _, error in
                     defer { group.leave() }
-                    if let data = data, url == self.predictURL {
-                        predict1ResponseData = data
-                        /**if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                         let resultDict = json["result"] as? [String: Any],
-                         let distances = resultDict["distance_from_median"] as? [Any] {
-                         finalPrediction = distances.isEmpty ? "normal" : "abnormal"
-                         **/
-                        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                           let resultDict = json["result"] as? [String: Any] {
-                            
-                            let abnormalDistances = (resultDict["distance_from_median"] as? [Any])?
-                                .compactMap { $0 as? Double }
-                                .filter { $0 > self.rrThreshold } ?? []
-                            
-                            finalPrediction = abnormalDistances.isEmpty ? "normal" : "abnormal"
-                        } else {
-                            finalPrediction = "normal"
-                        }
+                    guard url == self.predictURL, let data = data else { return }
+                    guard var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          var resultDict = json["result"] as? [String: Any] else {
+                        finalPrediction = "normal"
+                        return
                     }
+                    let filtered: [Double] = (resultDict["distance_from_median"] as? [Any])?
+                        .compactMap { $0 as? Double }
+                        .filter { $0 > self.rrThreshold } ?? []      // rrThreshold == 0.31
+                    resultDict["distance_from_median"] = filtered
+                    json["result"] = resultDict
+                    predict1ResponseData = try? JSONSerialization.data(withJSONObject: json)
+                    finalPrediction = filtered.isEmpty ? "normal" : "abnormal"
                 }.resume()
             }
             //0717

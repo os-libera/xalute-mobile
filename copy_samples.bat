@@ -9,14 +9,9 @@ set "SRC_FILE=ecg_2025-07-21T20-18-52_abnormal_raw"
 for /L %%D in (1,1,31) do (
     set "DAY=%%D"
     if %%D LSS 10 set "DAY=0%%D"
-    
-    :: 결과 종류 결정
-    set /A MOD=%%D %% 2
-    if !MOD! EQU 0 (
-        set "RESULT=normal"
-    ) else (
-        set "RESULT=abnormal"
-    )
+
+    :: 결과는 항상 abnormal
+    set "RESULT=abnormal"
 
     set "DATE=2025-07-!DAY!T09-00-00"
     set "NEWNAME=ecg_!DATE!_!RESULT!_raw"

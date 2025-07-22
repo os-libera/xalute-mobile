@@ -29,12 +29,21 @@ class EcgEntry {
 class EcgDataService extends ChangeNotifier {
   static const _channel = MethodChannel('com.example.health/ecg');
 
+  /**EcgDataService() {
+    loadInitialData().then((_) async {
+      await _importJulySamplesIfNeeded();
+      await loadFromLocalFiles();
+    });
+  }**/
+
   EcgDataService() {
+    SharedPreferences.getInstance().then((prefs) => prefs.remove('julySamplesImported'));
     loadInitialData().then((_) async {
       await _importJulySamplesIfNeeded();
       await loadFromLocalFiles();
     });
   }
+
 
   DateTime _parseFileDate(String raw) {
     final cleaned = raw
@@ -235,7 +244,7 @@ class EcgDataService extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('julySamplesImported') ?? false) {
-      debugPrint('[EcgDataService] ✅ 7월 샘플: 이미 import 완료됨');
+      debugPrint('[EcgDataService] ⚠️ 7월 샘플 import skipped → prefs에 이미 있음');
       return;
     }
 

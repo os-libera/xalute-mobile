@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 
 class EcgEntry {
   final DateTime dateTime;
@@ -46,10 +47,8 @@ class EcgDataService extends ChangeNotifier {
 
 
   DateTime _parseFileDate(String raw) {
-    final cleaned = raw
-        .replaceFirst('T', ' ')
-        .replaceAll('-', ':');
-    return DateTime.parse(cleaned);
+    final formatter = DateFormat("yyyy-MM-dd'T'HH-mm-ss");
+    return formatter.parse(raw);
   }
 
   final List<EcgEntry> _entries = [];

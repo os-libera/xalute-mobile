@@ -235,7 +235,7 @@ class EcgDataService extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('julySamplesImported') ?? false) {
-      debugPrint('[EcgDataService] 7월 샘플');
+      debugPrint('[EcgDataService] ✅ 7월 샘플: 이미 import 완료됨');
       return;
     }
 
@@ -246,34 +246,57 @@ class EcgDataService extends ChangeNotifier {
     });
 
     final appDir = await getApplicationDocumentsDirectory();
+    debugPrint('[EcgDataService] 📁 샘플 저장 경로: ${appDir.path}');
+
+    int successCount = 0;
+    int failureCount = 0;
 
     for (final name in sampleNames) {
       try {
+        debugPrint('📄 샘플 처리 시작: $name');
+
+        // Load and write TXT
         final txtData = await rootBundle.loadString('assets/ecg_samples/$name.txt');
         final txtPath = p.join(appDir.path, '$name.txt');
         await File(txtPath).writeAsString(txtData, flush: true);
 
+        // Load and write JSON
         final jsonData = await rootBundle.loadString('assets/ecg_samples/$name.json');
         final jsonPath = p.join(appDir.path, '$name.json');
         await File(jsonPath).writeAsString(jsonData, flush: true);
 
-        final parts = name.split('_');            // [ecg, 2025-07-.., normal/abnormal, raw]
+        // Add to entries
+        final parts = name.split('_'); // [ecg, 2025-07-01T09-00-00, normal, raw]
         final resultKor = parts[2] == 'abnormal' ? '이상 소견 의심' : '정상';
+        final txtContent = await File(txtPath).readAsString();
 
-        _addEntryFromPaths(
+        final entry = EcgEntry(
+          dateTime: _parseFileDate(parts[1]),
+          result: resultKor,
+          color: resultKor == '정상' ? Colors.grey[700]! : const Color(0xFFFB755B),
+          content: txtContent,
           txtPath: txtPath,
           jsonPath: jsonPath,
-          result: resultKor,
+          deviceType: 'iOS',
         );
 
-        debugPrint('[EcgDataService] 샘플 불러오기 완료: $name');
+        _entries.add(entry);
+        successCount++;
+
+        debugPrint('[EcgDataService] ✅ 샘플 등록 완료: $name');
+        debugPrint('  ↳ 날짜: ${entry.dateTime}');
+        debugPrint('  ↳ 결과: ${entry.result}');
+        debugPrint('  ↳ txt 경로: $txtPath');
+        debugPrint('  ↳ json 경로: $jsonPath');
       } catch (e) {
-        debugPrint('[$name] 샘플 누락: $e');
+        failureCount++;
+        debugPrint('[EcgDataService] ❌ 샘플 처리 실패: $name → $e');
       }
     }
+
+    debugPrint('[EcgDataService] ✅ 샘플 처리 요약: 성공 $successCount개 / 실패 $failureCount개');
 
     await prefs.setBool('julySamplesImported', true);
     notifyListeners();
   }
-
 }

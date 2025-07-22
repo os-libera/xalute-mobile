@@ -36,6 +36,12 @@ class EcgDataService extends ChangeNotifier {
     });
   }
 
+  DateTime _parseFileDate(String raw) {
+    final cleaned = raw
+        .replaceFirst('T', ' ')
+        .replaceAll('-', ':');
+    return DateTime.parse(cleaned);
+  }
 
   final List<EcgEntry> _entries = [];
 
@@ -185,7 +191,7 @@ class EcgDataService extends ChangeNotifier {
       final parts = base.split('_');
       if (parts.length < 4) continue;
 
-      final timestamp = DateTime.parse(parts[1].replaceFirst('T', ' '));
+      final timestamp = _parseFileDate(parts[1]);
       final resultKor = parts[2] == 'abnormal' ? '이상 소견 의심' : '정상';
 
       final color = resultKor == '이상 소견 의심'
@@ -211,7 +217,7 @@ class EcgDataService extends ChangeNotifier {
     required String result,
   }) {
     final parts = p.basenameWithoutExtension(txtPath).split('_');
-    final dateTime = DateTime.parse(parts[1].replaceFirst('T', ' '));
+    final dateTime = _parseFileDate(parts[1]);
 
     _entries.add(EcgEntry(
       dateTime: dateTime,
@@ -228,9 +234,11 @@ class EcgDataService extends ChangeNotifier {
     if (!Platform.isIOS) return;
 
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('julySamplesImported') ?? false) return;
+    if (prefs.getBool('julySamplesImported') ?? false) {
+      debugPrint('[EcgDataService] 7월 샘플');
+      return;
+    }
 
-    // 7월 1~31일, 홀수=normal 짝수=abnormal 예시
     final sampleNames = List.generate(31, (i) {
       final d = (i + 1).toString().padLeft(2, '0');
       final result = (i.isEven) ? 'abnormal' : 'normal';
@@ -257,6 +265,8 @@ class EcgDataService extends ChangeNotifier {
           jsonPath: jsonPath,
           result: resultKor,
         );
+
+        debugPrint('[EcgDataService] 샘플 불러오기 완료: $name');
       } catch (e) {
         debugPrint('[$name] 샘플 누락: $e');
       }

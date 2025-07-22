@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class EcgEntry {
   final DateTime dateTime;
@@ -27,8 +30,12 @@ class EcgDataService extends ChangeNotifier {
   static const _channel = MethodChannel('com.example.health/ecg');
 
   EcgDataService() {
-    loadInitialData().then((_) => loadFromLocalFiles());
+    loadInitialData().then((_) async {
+      await _importJulySamplesIfNeeded();
+      await loadFromLocalFiles();
+    });
   }
+
 
   final List<EcgEntry> _entries = [];
 
@@ -169,36 +176,94 @@ class EcgDataService extends ChangeNotifier {
     final files = dir.listSync();
 
     for (var file in files) {
-      if (file is File && file.path.endsWith('.txt')) {
-        final jsonPath = file.path.replaceAll('.txt', '.json');
-        final jsonFile = File(jsonPath);
-        if (!jsonFile.existsSync()) continue;
+      if (file is! File || !file.path.endsWith('.txt')) continue;
 
-        final fileName = file.uri.pathSegments.last;
-        final parts = fileName.split('_');
-        if (parts.length < 3) continue;
+      final jsonPath = file.path.replaceAll('.txt', '.json');
+      if (!File(jsonPath).existsSync()) continue;
 
-        final timestampStr = parts[1];
-        final resultStr = parts[2].replaceAll('.txt', '');
+      final base = p.basenameWithoutExtension(file.path);
+      final parts = base.split('_');
+      if (parts.length < 4) continue;
 
-        final timestamp = DateTime.fromMillisecondsSinceEpoch(int.parse(timestampStr));
-        final result = resultStr == 'abnormal' ? '이상 소견 의심' : '정상';
-        final color = result == '이상 소견 의심' ? const Color(0xFFFB755B) : Colors.grey[700]!;
-        final txtContent = await file.readAsString();
+      final timestamp = DateTime.parse(parts[1].replaceFirst('T', ' '));
+      final resultKor = parts[2] == 'abnormal' ? '이상 소견 의심' : '정상';
 
-        final entry = EcgEntry(
-          dateTime: timestamp,
-          result: result,
-          color: color,
-          content: txtContent,
-          txtPath: file.path,
-          jsonPath: jsonPath,
-          deviceType: Platform.isIOS ? 'iOS' : 'Android',
-        );
+      final color = resultKor == '이상 소견 의심'
+          ? const Color(0xFFFB755B)
+          : Colors.grey[700]!;
 
-        _entries.add(entry);
-      }
+      _entries.add(EcgEntry(
+        dateTime: timestamp,
+        result: resultKor,
+        color: color,
+        content: await file.readAsString(),
+        txtPath: file.path,
+        jsonPath: jsonPath,
+        deviceType: Platform.isIOS ? 'iOS' : 'Android',
+      ));
     }
     notifyListeners();
   }
+
+  void _addEntryFromPaths({
+    required String txtPath,
+    required String jsonPath,
+    required String result,
+  }) {
+    final parts = p.basenameWithoutExtension(txtPath).split('_');
+    final dateTime = DateTime.parse(parts[1].replaceFirst('T', ' '));
+
+    _entries.add(EcgEntry(
+      dateTime: dateTime,
+      result: result,
+      color: result == '정상' ? Colors.grey[700]! : const Color(0xFFFB755B),
+      content: '',
+      txtPath: txtPath,
+      jsonPath: jsonPath,
+      deviceType: 'iOS',
+    ));
+  }
+
+  Future<void> _importJulySamplesIfNeeded() async {
+    if (!Platform.isIOS) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('julySamplesImported') ?? false) return;
+
+    // 7월 1~31일, 홀수=normal 짝수=abnormal 예시
+    final sampleNames = List.generate(31, (i) {
+      final d = (i + 1).toString().padLeft(2, '0');
+      final result = (i.isEven) ? 'abnormal' : 'normal';
+      return 'ecg_2025-07-${d}T09-00-00_${result}_raw';
+    });
+
+    final appDir = await getApplicationDocumentsDirectory();
+
+    for (final name in sampleNames) {
+      try {
+        final txtData = await rootBundle.loadString('assets/ecg_samples/$name.txt');
+        final txtPath = p.join(appDir.path, '$name.txt');
+        await File(txtPath).writeAsString(txtData, flush: true);
+
+        final jsonData = await rootBundle.loadString('assets/ecg_samples/$name.json');
+        final jsonPath = p.join(appDir.path, '$name.json');
+        await File(jsonPath).writeAsString(jsonData, flush: true);
+
+        final parts = name.split('_');            // [ecg, 2025-07-.., normal/abnormal, raw]
+        final resultKor = parts[2] == 'abnormal' ? '이상 소견 의심' : '정상';
+
+        _addEntryFromPaths(
+          txtPath: txtPath,
+          jsonPath: jsonPath,
+          result: resultKor,
+        );
+      } catch (e) {
+        debugPrint('[$name] 샘플 누락: $e');
+      }
+    }
+
+    await prefs.setBool('julySamplesImported', true);
+    notifyListeners();
+  }
+
 }

@@ -249,8 +249,7 @@ class EcgDataService extends ChangeNotifier {
 
     final sampleNames = List.generate(31, (i) {
       final d = (i + 1).toString().padLeft(2, '0');
-      final result = (i.isEven) ? 'abnormal' : 'normal';
-      return 'ecg_2025-07-${d}T09-00-00_${result}_raw';
+      return 'ecg_2025-07-${d}T09-00-00_abnormal_raw';
     });
 
     final appDir = await getApplicationDocumentsDirectory();

@@ -61,7 +61,8 @@ class _EcgPageState extends State<EcgPage> {
             context: context,
             builder: (context) =>
                 AlertDialog(
-                  content: const Text("Please check the connection to the watch."),
+                  content: const Text(
+                      "Please check the connection to the watch."),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context),
                         child: const Text("OK"))
@@ -79,7 +80,8 @@ class _EcgPageState extends State<EcgPage> {
           context: context,
           builder: (context) =>
               AlertDialog(
-                content: const Text("Would you like to start ECG measurement on the watch?"),
+                content: const Text(
+                    "Would you like to start ECG measurement on the watch?"),
                 actions: [
                   TextButton(
                     onPressed: () async {
@@ -90,10 +92,12 @@ class _EcgPageState extends State<EcgPage> {
                           'birthDate': birthDate,
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Watch app launched")));
+                            const SnackBar(
+                                content: Text("Watch app launched")));
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Failed to launch watch app")));
+                            const SnackBar(
+                                content: Text("Failed to launch watch app")));
                       }
                     },
                     child: const Text("Confirm"),
@@ -113,7 +117,8 @@ class _EcgPageState extends State<EcgPage> {
             .fetchEcgData();
       } catch (e, stack) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to fetch ECG data: $e')));
+            .showSnackBar(
+            SnackBar(content: Text('Failed to fetch ECG data: $e')));
       } finally {
         if (mounted) setState(() => isLoading = false);
       }
@@ -147,286 +152,252 @@ class _EcgPageState extends State<EcgPage> {
         children: [
           SafeArea(
             top: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 48),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "${ecgService.userName}'s",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 24,
-                                  height: 32 / 24,
-                                  letterSpacing: 0.0,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: const [
-                                  Text(
-                                    "Health score is 72",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 24,
-                                      height: 32 / 24, // line-height 계산
-                                      letterSpacing: 0.0,
-                                      color: Color(0xFFFB755B),
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Icon(Icons.chevron_right),
-                                ],
-                              ),
-                              const Text("Up 3 points form yesterday",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 13,
-                                      height: 1.0,
-                                      letterSpacing: 0.0,
-                                      color: Colors.grey
-                                  ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Align(
-                          alignment: Alignment.center,
-                          child: GestureDetector(
-                            onTap: _openSettings,
-                            child: Consumer<EcgDataService>(
-                              builder: (context, ecgService, child) {
-                                return CircleAvatar(
-                                  radius: 25,
-                                  backgroundColor: Colors.grey[200],
-                                  backgroundImage: ecgService
-                                      .profileImagePath != null
-                                      ? FileImage(
-                                      File(ecgService.profileImagePath!))
-                                      : const AssetImage(
-                                      'assets/icon/profile.png') as ImageProvider,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 48),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "${focusedDay.year}.${focusedDay.month}",
+                              "${ecgService.userName}'s",
                               style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 24,
+                                height: 32 / 24,
+                                letterSpacing: 0.0,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            GestureDetector(
-                              onTap: () =>
-                                  setState(() =>
-                                  focusedDay = DateTime(
-                                      focusedDay.year, focusedDay.month - 1)),
-                              child: Icon(
-                                  Icons.chevron_left, color: Colors.grey[700],
-                                  size: 24),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: const [
+                                Text(
+                                  "Health score is 72",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 24,
+                                    height: 32 / 24,
+                                    letterSpacing: 0.0,
+                                    color: Color(0xFFFB755B),
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Icon(Icons.chevron_right),
+                              ],
                             ),
-                            const SizedBox(width: 2),
-                            GestureDetector(
-                              onTap: () =>
-                                  setState(() =>
-                                  focusedDay = DateTime(
-                                      focusedDay.year, focusedDay.month + 1)),
-                              child: Icon(
-                                  Icons.chevron_right, color: Colors.grey[700],
-                                  size: 24),
+                            const Text(
+                              "Up 3 points from yesterday",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                fontSize: 13,
+                                height: 1.0,
+                                letterSpacing: 0.0,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          tooltip: 'Refresh',
-                          onPressed: _refreshCalendarData,
+                      ),
+                      const SizedBox(width: 12),
+                      Align(
+                        alignment: Alignment.center,
+                        child: GestureDetector(
+                          onTap: _openSettings,
+                          child: Consumer<EcgDataService>(
+                            builder: (context, ecgService, child) {
+                              return CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Colors.grey[200],
+                                backgroundImage: ecgService.profileImagePath !=
+                                    null
+                                    ? FileImage(
+                                    File(ecgService.profileImagePath!))
+                                    : const AssetImage(
+                                    'assets/icon/profile.png') as ImageProvider,
+                              );
+                            },
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
                         children: [
-                          Column(children: [
-                            const Text(
-                                "Total measurement", style: TextStyle(fontSize: 14)),
-                            Text("${monthResults.length} times",
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold))
-                          ]),
-                          Column(children: [
-                            const Text(
-                                "Suspected Abnormality", style: TextStyle(fontSize: 14)),
-                            Text("$abnormalMonthTotal times", style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold))
-                          ])
+                          Text(
+                            "${focusedDay.year}.${focusedDay.month}",
+                            style: const TextStyle(fontSize: 20,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => focusedDay = DateTime(
+                                    focusedDay.year, focusedDay.month - 1)),
+                            child: Icon(Icons.chevron_left,
+                                color: Colors.grey[700], size: 24),
+                          ),
+                          const SizedBox(width: 2),
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => focusedDay = DateTime(
+                                    focusedDay.year, focusedDay.month + 1)),
+                            child: Icon(Icons.chevron_right,
+                                color: Colors.grey[700], size: 24),
+                          ),
                         ],
                       ),
-                    ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh',
+                        onPressed: _refreshCalendarData,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  TableCalendar(
-                    focusedDay: focusedDay,
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    selectedDayPredicate: (day) => isSameDay(selectedDay, day),
-                    onDaySelected: (selected, focused) =>
-                        setState(() {
-                          selectedDay = selected;
-                          focusedDay = focused;
-                        }),
-                    onPageChanged: (newFocusedDay) =>
-                        setState(() => focusedDay = newFocusedDay),
-                    calendarFormat: CalendarFormat.month,
-                    startingDayOfWeek: StartingDayOfWeek.sunday,
-                    headerVisible: false,
-                    calendarStyle: CalendarStyle(
-                      outsideDaysVisible: false,
-                      todayDecoration: const BoxDecoration(),
-                      todayTextStyle: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.black),
-                      selectedDecoration: BoxDecoration(
-                          color: Color(0xFFFFEEEA), shape: BoxShape.circle),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    enabledDayPredicate: (day) {
-                      final normalized = DateTime.utc(
-                          day.year, day.month, day.day);
-                      final today = DateTime.now();
-                      final isToday = isSameDay(today, day);
-                      return ecgService.statusMap.containsKey(normalized) ||
-                          isToday;
-                    },
-                    calendarBuilders: CalendarBuilders(
-                      defaultBuilder: (context, day, _) {
-                        final normalized = DateTime.utc(
-                            day.year, day.month, day.day);
-                        final statuses = ecgService.statusMap[normalized];
-                        if (statuses == null) return null;
-                        final abnormalCount = statuses
-                            .where((e) => e == '이상 소견 의심')
-                            .length;
-                        final totalCount = statuses.length;
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('${day.day}',
-                                style: const TextStyle(color: Colors.black)),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(text: '$abnormalCount',
-                                      style: const TextStyle(fontSize: 10,
-                                          color: Color(0xFFFB755B))),
-                                  const TextSpan(text: ' / ',
-                                      style: TextStyle(
-                                          fontSize: 10, color: Colors.black54)),
-                                  TextSpan(text: '$totalCount',
-                                      style: const TextStyle(
-                                          fontSize: 10, color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                      todayBuilder: (context, day, _) {
-                        final normalized = DateTime.utc(
-                            day.year, day.month, day.day);
-                        final statuses = ecgService.statusMap[normalized];
-                        final hasData = statuses != null;
-                        final abnormalCount = hasData ? statuses!.where((
-                            e) => e == '이상 소견 의심').length : 0;
-                        final totalCount = hasData ? statuses.length : 0;
-
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${day.day}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: hasData ? Colors.black : Colors.grey,
-                              ),
-                            ),
-                            hasData
-                                ? RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(text: '$abnormalCount',
-                                      style: const TextStyle(fontSize: 10,
-                                          color: Color(0xFFFB755B))),
-                                  const TextSpan(text: ' / ',
-                                      style: TextStyle(
-                                          fontSize: 10, color: Colors.black54)),
-                                  TextSpan(text: '$totalCount',
-                                      style: const TextStyle(
-                                          fontSize: 10, color: Colors.grey)),
-                                ],
-                              ),
-                            )
-                                : const SizedBox(height: 0),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-                  const Center(
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Icon(Icons.circle, color: Color(0xFFFB755B), size: 8),
-                        SizedBox(width: 4),
-                        Text("Suspected Abnormality", style: TextStyle(fontSize: 12)),
-                        SizedBox(width: 16),
-                        Icon(Icons.circle, color: Colors.grey, size: 8),
-                        SizedBox(width: 4),
-                        Text("Total Measurement", style: TextStyle(fontSize: 12)),
+                        Column(children: [
+                          const Text("Total measurement",
+                              style: TextStyle(fontSize: 14)),
+                          Text("${monthResults.length} times",
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold))
+                        ]),
+                        Column(children: [
+                          const Text("Suspected Abnormality",
+                              style: TextStyle(fontSize: 14)),
+                          Text("$abnormalMonthTotal times",
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold))
+                        ])
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Padding(
+                ),
+                const SizedBox(height: 10),
+                TableCalendar(
+                  focusedDay: focusedDay,
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+                  onDaySelected: (selected, focused) =>
+                      setState(() {
+                        selectedDay = selected;
+                        focusedDay = focused;
+                      }),
+                  onPageChanged: (newFocusedDay) =>
+                      setState(() => focusedDay = newFocusedDay),
+                  calendarFormat: CalendarFormat.month,
+                  startingDayOfWeek: StartingDayOfWeek.sunday,
+                  headerVisible: false,
+                  calendarStyle: CalendarStyle(
+                    outsideDaysVisible: false,
+                    todayDecoration: const BoxDecoration(),
+                    todayTextStyle: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black),
+                    selectedDecoration: BoxDecoration(
+                        color: Color(0xFFFFEEEA), shape: BoxShape.circle),
+                  ),
+                  enabledDayPredicate: (day) {
+                    final normalized = DateTime.utc(
+                        day.year, day.month, day.day);
+                    final today = DateTime.now();
+                    final isToday = isSameDay(today, day);
+                    return ecgService.statusMap.containsKey(normalized) ||
+                        isToday;
+                  },
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, day, _) {
+                      final normalized = DateTime.utc(
+                          day.year, day.month, day.day);
+                      final statuses = ecgService.statusMap[normalized];
+                      if (statuses == null) return null;
+                      final abnormalCount = statuses
+                          .where((e) => e == '이상 소견 의심')
+                          .length;
+                      final totalCount = statuses.length;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('${day.day}', style: const TextStyle(
+                              color: Colors.black)),
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(text: '$abnormalCount',
+                                    style: const TextStyle(fontSize: 10,
+                                        color: Color(0xFFFB755B))),
+                                const TextSpan(text: ' / ',
+                                    style: TextStyle(
+                                        fontSize: 10, color: Colors.black54)),
+                                TextSpan(text: '$totalCount',
+                                    style: const TextStyle(
+                                        fontSize: 10, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.circle, color: Color(0xFFFB755B), size: 8),
+                      SizedBox(width: 4),
+                      Text("Suspected Abnormality",
+                          style: TextStyle(fontSize: 12)),
+                      SizedBox(width: 16),
+                      Icon(Icons.circle, color: Colors.grey, size: 8),
+                      SizedBox(width: 4),
+                      Text("Total Measurement", style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // ✅ 여기부터 스크롤 영역
+                Expanded(
+                  child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: selectedResults.map((entry) {
+                    child: ListView.builder(
+                      itemCount: selectedResults.length,
+                      itemBuilder: (context, index) {
+                        final entry = selectedResults[index];
                         final formatted = DateFormat('MM d, HH:mm').format(
                             entry.dateTime);
                         final isAbnormal = entry.result == '이상 소견 의심';
-                        final resultText = isAbnormal ? 'Suspected Abnormality' : 'Normal';
+                        final resultText = isAbnormal
+                            ? 'Suspected Abnormality'
+                            : 'Normal';
 
                         return InkWell(
                           onTap: () {
@@ -465,34 +436,36 @@ class _EcgPageState extends State<EcgPage> {
                             ),
                           ),
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFB755B),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: _handleMeasureButton,
-                        child: Text(
-                          Platform.isIOS ? "Fetch ECG" : "Start Measurement",
-                          style: const TextStyle(fontSize: 16,
-                              color: Colors.white),
-                        ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFB755B),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _handleMeasureButton,
+                      child: Text(
+                        Platform.isIOS ? "Fetch ECG" : "Start Measurement",
+                        style: const TextStyle(
+                            fontSize: 16, color: Colors.white),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+
           if (isLoading)
             AbsorbPointer(
               absorbing: true,
@@ -502,11 +475,8 @@ class _EcgPageState extends State<EcgPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Lottie.asset(
-                      'assets/lottie/Animation.json',
-                      width: 100,
-                      height: 100,
-                    ),
+                    Lottie.asset('assets/lottie/Animation.json', width: 100,
+                        height: 100),
                     const SizedBox(height: 16),
                     const Text(
                       'Fetching ECG data\nPlease wait without closing the app',

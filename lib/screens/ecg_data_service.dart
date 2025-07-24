@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class EcgEntry {
   final DateTime dateTime;
@@ -130,13 +131,14 @@ class EcgDataService extends ChangeNotifier {
   }
 
   List<EcgEntry> entriesForDay(DateTime day) {
-    final d = DateTime.utc(day.year, day.month, day.day);
-    return _entries.where((e) {
-      final ed = DateTime.utc(e.dateTime.year, e.dateTime.month, e.dateTime.day);
-      return ed == d;
-    }).toList();
+    final normalized = DateTime.utc(day.year, day.month, day.day);
+    return _entries
+        .where((e) => isSameDay(e.dateTime, normalized))
+        .toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
   }
- Future<bool> _requestAuthorization() async {
+
+  Future<bool> _requestAuthorization() async {
   if (!Platform.isIOS) return true;
   try {
     final granted = await _channel.invokeMethod<bool>('requestAuthorization');
@@ -247,10 +249,19 @@ class EcgDataService extends ChangeNotifier {
       return;
     }
 
-    final sampleNames = List.generate(31, (i) {
+    /**final sampleNames = List.generate(31, (i) {
       final d = (i + 1).toString().padLeft(2, '0');
       return 'ecg_2025-07-${d}T09-00-00_abnormal_raw';
     });
+    **/
+
+    final sampleNames = [
+      for (var day = 1; day <= 31; day++)
+        'ecg_2025-07-${day.toString().padLeft(2, "0")}T09-00-00_abnormal_raw',
+
+      'ecg_2025-07-25T12-30-00_abnormal_raw',
+      'ecg_2025-07-25T15-20-00_abnormal_raw',
+    ];
 
     final appDir = await getApplicationDocumentsDirectory();
     debugPrint('[EcgDataService] 📁 샘플 저장 경로: ${appDir.path}');

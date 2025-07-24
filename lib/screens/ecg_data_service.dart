@@ -135,7 +135,7 @@ class EcgDataService extends ChangeNotifier {
     return _entries
         .where((e) => isSameDay(e.dateTime, normalized))
         .toList()
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
   }
 
   Future<bool> _requestAuthorization() async {

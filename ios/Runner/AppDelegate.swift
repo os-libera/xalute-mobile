@@ -384,13 +384,22 @@ enum Storage {
                         finalPrediction = "normal"
                         return
                     }
-                    let filtered: [Double] = (resultDict["distance_from_median"] as? [Any])?
+                    /*let filtered: [Double] = (resultDict["distance_from_median"] as? [Any])?
                         .compactMap { $0 as? Double }
                         .filter { $0 > self.rrThreshold } ?? []      // rrThreshold == 0.31
                     resultDict["distance_from_median"] = filtered
                     json["result"] = resultDict
                     predict1ResponseData = try? JSONSerialization.data(withJSONObject: json)
                     finalPrediction = filtered.isEmpty ? "normal" : "abnormal"
+                    */
+                    let originalDistances: [Double] = (resultDict["distance_from_median"] as? [Any])?
+                            .compactMap { $0 as? Double } ?? []
+                    let hasAbnormalValue = originalDistances.contains { $0 > self.rrThreshold }
+                    os_log("threashold result: ", hasAbnormalValue)
+                    finalPrediction = hasAbnormalValue ? "abnormal" : "normal"
+                    resultDict["distance_from_median"] = originalDistances
+                    json["result"] = resultDict
+                    predict1ResponseData = try? JSONSerialization.data(withJSONObject: json)
                 }.resume()
             }
             //0717

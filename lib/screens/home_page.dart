@@ -50,22 +50,22 @@ class _HomePageState extends State<HomePage> {
               Text("Welcome. $username!", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const Text("This is Xalute!", style: TextStyle(fontSize: 18)),
               const SizedBox(height: 32),
-              Text("Today's health score is", style: header),
+              Text("오늘의 건강 점수는", style: header),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("$healthScore", style: number),
-                  const Text("points.", style: TextStyle(fontSize: 20)),
+                  const Text("점.", style: TextStyle(fontSize: 20)),
                 ],
               ),
-              Text("${healthDiff >= 0 ? "+" : "-"}$healthDiff compared to yesterday.", style: comment),
+              Text("어제보다 ${healthDiff >= 0 ? "+" : "-"}$healthDiff", style: comment),
               const SizedBox(height: 32),
-              Text("Total measurements this month", style: header),
+              Text("총 측정 횟수", style: header),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("$monthlyCount", style: number),
-                  const Text("times.", style: TextStyle(fontSize: 20)),
+                  const Text("번.", style: TextStyle(fontSize: 20)),
                 ],
               ),
               Text("Measured for ${streakDays}days in a row.", style: comment),
@@ -76,7 +76,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("$arrhythmiaCount", style: highlight),
-                  const Text("times.", style: TextStyle(fontSize: 20)),
+                  const Text("번.", style: TextStyle(fontSize: 20)),
                 ],
               ),
             ],

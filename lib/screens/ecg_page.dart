@@ -20,6 +20,7 @@ class _EcgPageState extends State<EcgPage> {
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDay;
   bool isLoading = false;
+  bool isCalendarExpanded = true;
 
   @override
   void initState() {
@@ -62,10 +63,10 @@ class _EcgPageState extends State<EcgPage> {
             builder: (context) =>
                 AlertDialog(
                   content: const Text(
-                      "Please check the connection to the watch."),
+                      "워치와의 연결을 확인해주세요."),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context),
-                        child: const Text("OK"))
+                        child: const Text("확인"))
                   ],
                 ),
           );
@@ -81,7 +82,7 @@ class _EcgPageState extends State<EcgPage> {
           builder: (context) =>
               AlertDialog(
                 content: const Text(
-                    "Would you like to start ECG measurement on the watch?"),
+                    "워치를 통해 ECG 측정을 시작하시겠습니까?"),
                 actions: [
                   TextButton(
                     onPressed: () async {
@@ -93,17 +94,17 @@ class _EcgPageState extends State<EcgPage> {
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text("Watch app launched")));
+                                content: Text("워치 앱 실행.")));
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text("Failed to launch watch app")));
+                                content: Text("워치 앱 실행 실패.")));
                       }
                     },
-                    child: const Text("Confirm"),
+                    child: const Text("확인"),
                   ),
                   TextButton(onPressed: () => Navigator.pop(context),
-                      child: const Text("Cancel")),
+                      child: const Text("취소")),
                 ],
               ),
         );
@@ -118,7 +119,7 @@ class _EcgPageState extends State<EcgPage> {
       } catch (e, stack) {
         ScaffoldMessenger.of(context)
             .showSnackBar(
-            SnackBar(content: Text('Failed to fetch ECG data: $e')));
+            SnackBar(content: Text('ECG 데이터 조회 실패: $e')));
       } finally {
         if (mounted) setState(() => isLoading = false);
       }
@@ -179,7 +180,7 @@ class _EcgPageState extends State<EcgPage> {
                             Row(
                               children: const [
                                 Text(
-                                  "Health score is 72",
+                                  "건강 점수는 72",
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 24,
@@ -193,7 +194,7 @@ class _EcgPageState extends State<EcgPage> {
                               ],
                             ),
                             const Text(
-                              "Up 3 points from yesterday",
+                              "어제보다 3점 상승",
                               style: TextStyle(
                                 fontWeight: FontWeight.w400,
                                 fontSize: 13,
@@ -262,9 +263,17 @@ class _EcgPageState extends State<EcgPage> {
                         ],
                       ),
                       IconButton(
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Refresh',
-                        onPressed: _refreshCalendarData,
+                        icon: Icon(
+                          isCalendarExpanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: Colors.grey[700],
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isCalendarExpanded = !isCalendarExpanded;
+                          });
+                        },
                       ),
                     ],
                   ),
@@ -282,16 +291,16 @@ class _EcgPageState extends State<EcgPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         Column(children: [
-                          const Text("Total measurement",
+                          const Text("총 측정 횟수",
                               style: TextStyle(fontSize: 14)),
-                          Text("${monthResults.length} times",
+                          Text("${monthResults.length} 번",
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold))
                         ]),
                         Column(children: [
-                          const Text("Suspected Abnormality",
+                          const Text("이상 소견 의심",
                               style: TextStyle(fontSize: 14)),
-                          Text("$abnormalMonthTotal times",
+                          Text("$abnormalMonthTotal 번",
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold))
                         ])
@@ -300,72 +309,90 @@ class _EcgPageState extends State<EcgPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                TableCalendar(
-                  focusedDay: focusedDay,
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 12, 31),
-                  selectedDayPredicate: (day) => isSameDay(selectedDay, day),
-                  onDaySelected: (selected, focused) =>
-                      setState(() {
-                        selectedDay = selected;
-                        focusedDay = focused;
-                      }),
-                  onPageChanged: (newFocusedDay) =>
-                      setState(() => focusedDay = newFocusedDay),
-                  calendarFormat: CalendarFormat.month,
-                  startingDayOfWeek: StartingDayOfWeek.sunday,
-                  headerVisible: false,
-                  calendarStyle: CalendarStyle(
-                    outsideDaysVisible: false,
-                    todayDecoration: const BoxDecoration(),
-                    todayTextStyle: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
-                    selectedDecoration: BoxDecoration(
-                        color: Color(0xFFFFEEEA), shape: BoxShape.circle),
-                  ),
-                  enabledDayPredicate: (day) {
-                    final normalized = DateTime.utc(
-                        day.year, day.month, day.day);
-                    final today = DateTime.now();
-                    final isToday = isSameDay(today, day);
-                    return ecgService.statusMap.containsKey(normalized) ||
-                        isToday;
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, day, _) {
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: isCalendarExpanded
+                      ? TableCalendar(
+                    focusedDay: focusedDay,
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2030, 12, 31),
+                    selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+                    onDaySelected: (selected, focused) =>
+                        setState(() {
+                          selectedDay = selected;
+                          focusedDay = focused;
+                        }),
+                    onPageChanged: (newFocusedDay) =>
+                        setState(() => focusedDay = newFocusedDay),
+                    calendarFormat: CalendarFormat.month,
+                    startingDayOfWeek: StartingDayOfWeek.sunday,
+                    headerVisible: false,
+                    calendarStyle: CalendarStyle(
+                      outsideDaysVisible: false,
+                      todayDecoration: const BoxDecoration(),
+                      todayTextStyle: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.black),
+                      selectedDecoration: const BoxDecoration(
+                          color: Color(0xFFFFEEEA), shape: BoxShape.circle),
+                    ),
+                    enabledDayPredicate: (day) {
                       final normalized = DateTime.utc(
                           day.year, day.month, day.day);
-                      final statuses = ecgService.statusMap[normalized];
-                      if (statuses == null) return null;
-                      final abnormalCount = statuses
-                          .where((e) => e == '이상 소견 의심')
-                          .length;
-                      final totalCount = statuses.length;
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('${day.day}', style: const TextStyle(
-                              color: Colors.black)),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(text: '$abnormalCount',
-                                    style: const TextStyle(fontSize: 10,
-                                        color: Color(0xFFFB755B))),
-                                const TextSpan(text: ' / ',
-                                    style: TextStyle(
-                                        fontSize: 10, color: Colors.black54)),
-                                TextSpan(text: '$totalCount',
-                                    style: const TextStyle(
-                                        fontSize: 10, color: Colors.grey)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
+                      final today = DateTime.now();
+                      final isToday = isSameDay(today, day);
+                      return ecgService.statusMap.containsKey(normalized) ||
+                          isToday;
                     },
-                  ),
+                    calendarBuilders: CalendarBuilders(
+                      defaultBuilder: (context, day, _) {
+                        final normalized = DateTime.utc(
+                            day.year, day.month, day.day);
+                        final statuses = ecgService.statusMap[normalized];
+                        if (statuses == null) return null;
+                        final abnormalCount = statuses
+                            .where((e) => e == '이상 소견 의심')
+                            .length;
+                        final totalCount = statuses.length;
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('${day.day}', style: const TextStyle(
+                                color: Colors.black)),
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(text: '$abnormalCount',
+                                      style: const TextStyle(fontSize: 10,
+                                          color: Color(0xFFFB755B))),
+                                  const TextSpan(text: ' / ',
+                                      style: TextStyle(
+                                          fontSize: 10, color: Colors.black54)),
+                                  TextSpan(text: '$totalCount',
+                                      style: const TextStyle(
+                                          fontSize: 10, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  )
+                      : const SizedBox.shrink(),
                 ),
+
+                if (!isCalendarExpanded)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Center(
+                      child: Text(
+                        "${DateFormat('yyyy.MM').format(focusedDay)} 캘린더가 접혀있습니다.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ),
+                  ),
+
                 const SizedBox(height: 8),
                 const Center(
                   child: Row(
@@ -373,18 +400,17 @@ class _EcgPageState extends State<EcgPage> {
                     children: [
                       Icon(Icons.circle, color: Color(0xFFFB755B), size: 8),
                       SizedBox(width: 4),
-                      Text("Suspected Abnormality",
+                      Text("이상 소견 의심",
                           style: TextStyle(fontSize: 12)),
                       SizedBox(width: 16),
                       Icon(Icons.circle, color: Colors.grey, size: 8),
                       SizedBox(width: 4),
-                      Text("Total Measurement", style: TextStyle(fontSize: 12)),
+                      Text("총 측정 횟수", style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
 
-                // ✅ 여기부터 스크롤 영역
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -396,8 +422,8 @@ class _EcgPageState extends State<EcgPage> {
                             entry.dateTime);
                         final isAbnormal = entry.result == '이상 소견 의심';
                         final resultText = isAbnormal
-                            ? 'Suspected Abnormality'
-                            : 'Normal';
+                            ? '이상 소견 의심'
+                            : '정상';
 
                         return InkWell(
                           onTap: () {
@@ -455,7 +481,7 @@ class _EcgPageState extends State<EcgPage> {
                       ),
                       onPressed: _handleMeasureButton,
                       child: Text(
-                        Platform.isIOS ? "Fetch ECG" : "Start Measurement",
+                        Platform.isIOS ? "ECG 조회" : "측정 시작",
                         style: const TextStyle(
                             fontSize: 16, color: Colors.white),
                       ),

@@ -101,11 +101,11 @@ class _SettingPageState extends State<SettingPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
-                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                      child: const Text('취소', style: TextStyle(color: Colors.grey)),
                       onPressed: () => Navigator.pop(context),
                     ),
                     TextButton(
-                      child: const Text('Confirm', style: TextStyle(color: Colors.redAccent)),
+                      child: const Text('확인', style: TextStyle(color: Colors.redAccent)),
                       onPressed: () {
                         setState(() {
                           _birthdayController.text = DateFormat('yyyy.MM.dd').format(selectedDate);
@@ -142,10 +142,10 @@ class _SettingPageState extends State<SettingPage> {
       builder: (context) {
         return SimpleDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Change Profile Picture'),
+          title: const Text('프로필 사진 변경'),
           children: [
             SimpleDialogOption(
-              child: const Text('Take a Photo'),
+              child: const Text('사진 촬영'),
               onPressed: () async {
                 Navigator.pop(context, true);
                 final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
@@ -158,7 +158,7 @@ class _SettingPageState extends State<SettingPage> {
               },
             ),
             SimpleDialogOption(
-              child: const Text('Choose from Gallery'),
+              child: const Text('갤러리에서 사진 선택'),
               onPressed: () async {
                 Navigator.pop(context);
                 final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -171,7 +171,7 @@ class _SettingPageState extends State<SettingPage> {
               },
             ),
             SimpleDialogOption(
-              child: const Text('Reset to Default Image'),
+              child: const Text('기본 이미지로 변경'),
               onPressed: () {
                 Navigator.pop(context);
                 setState(() {
@@ -199,7 +199,7 @@ class _SettingPageState extends State<SettingPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFE),
       appBar: AppBar(
-        title: const Text("Setting", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold,),),
+        title: const Text("설정", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold,),),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -222,14 +222,14 @@ class _SettingPageState extends State<SettingPage> {
                         : const AssetImage('assets/icon/profile.png') as ImageProvider,
                   ),
                   const SizedBox(height: 8),
-                  const Text('Change', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                  const Text('변경', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
             const SizedBox(height: 32),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("Name", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text("이름", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -252,7 +252,7 @@ class _SettingPageState extends State<SettingPage> {
             const SizedBox(height: 20),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("BirthDay Date", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text("생년월일", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             GestureDetector(
@@ -286,7 +286,7 @@ class _SettingPageState extends State<SettingPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text("Save", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text("저장", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

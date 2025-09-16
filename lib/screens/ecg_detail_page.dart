@@ -172,12 +172,28 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       return const Center(child: Text('해당 리드에 대한 데이터가 없습니다.', style: TextStyle(fontSize: 14)));
     }
 
-    final adjustedSpots = spots;
+    const double rrThreshold = 0.31;
+    List<int> filteredRPeaks = [];
+    List<double> filteredDistances = [];
 
+    debugPrint('--- 비정상 R-R 간격 데이터 필터링 시작 ---');
+    for (int i = 0; i < distances.length; i++) {
+      if (i < distances.length && (i * 2 + 1) < rPeaks.length) {
+        if (distances[i] > rrThreshold) {
+          filteredDistances.add(distances[i]);
+          filteredRPeaks.add(rPeaks[i * 2]);
+          filteredRPeaks.add(rPeaks[i * 2 + 1]);
+
+          debugPrint('임계값 초과 감지: distance=${distances[i]}, R-peaks 인덱스: [${rPeaks[i * 2]}, ${rPeaks[i * 2 + 1]}]');
+        }
+      }
+    }
+    debugPrint('--- 필터링 완료: ${filteredDistances.length}개 발견 ---');
+
+    final adjustedSpots = spots;
     final xMax = adjustedSpots.last.x;
     final yMin = adjustedSpots.map((e) => e.y).reduce((a, b) => a < b ? a : b);
     final yMax = adjustedSpots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
-
     final chartWidth = xMax * 50 * zoomScale;
 
     return GestureDetector(
@@ -247,8 +263,13 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                     ? RangeAnnotations(
                   verticalRangeAnnotations: List.generate(distances.length ~/ 2, (i) {
                     if (rPeaks.length <= i * 2 + 1 || rPeaks[i * 2 + 1] >= spots.length) return null;
-                    final x1 = spots[rPeaks[i * 2]].x;
-                    final x2 = spots[rPeaks[i * 2 + 1]].x;
+                    final rPeak1Index = i * 2;
+                    final rPeak2Index = i * 2 + 1;
+                    if (rPeak2Index >= filteredRPeaks.length || filteredRPeaks[rPeak2Index] >= spots.length) {
+                      return null;
+                    }
+                    final x1 = spots[filteredRPeaks[rPeak1Index]].x;
+                    final x2 = spots[filteredRPeaks[rPeak2Index]].x;
                     return VerticalRangeAnnotation(
                       x1: x1,
                       x2: x2,
@@ -259,14 +280,19 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                     : const RangeAnnotations(),
                 lineBarsData: [
                   if (isFirstSignal)
-                    ...List.generate(distances.length ~/ 2, (i) {
-                      final x1 = rPeaks[i * 2];
-                      final x2 = rPeaks[i * 2 + 1];
-                      if (x2 >= spots.length) return null;
+                    ...List.generate(filteredDistances.length, (i) {
+                      final rPeak1Index = i * 2;
+                      final rPeak2Index = i * 2 + 1;
+                      if (rPeak2Index >= filteredRPeaks.length) return null;
+
+                      final x1 = filteredRPeaks[rPeak1Index];
+                      final x2 = filteredRPeaks[rPeak2Index];
+
                       final rangeSpots = spots
                           .where((e) => e.x >= spots[x1].x && e.x <= spots[x2].x)
-                          .map((e) => FlSpot(e.x * zoomScale, e.y))
+                          .map((e) => FlSpot(e.x, e.y))
                           .toList();
+
                       return LineChartBarData(
                         spots: rangeSpots,
                         isCurved: false,
@@ -286,7 +312,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
                   if (isFirstSignal)
                     LineChartBarData(
-                      spots: rPeaks
+                      spots: filteredRPeaks
                           .where((x) => x < spots.length)
                           .map((x) => FlSpot(spots[x].x, spots[x].y))
                           .toList(),
@@ -317,7 +343,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Measurement Result', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
+        title: const Text('측정 결과', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.black),
         centerTitle: true,
       ),

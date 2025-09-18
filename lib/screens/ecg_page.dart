@@ -351,7 +351,6 @@ class _EcgPageState extends State<EcgPage> {
                     calendarFormat: CalendarFormat.month,
                     startingDayOfWeek: StartingDayOfWeek.sunday,
                     headerVisible: false,
-                    rowHeight: 55,
                     calendarStyle: const CalendarStyle(
                       outsideDaysVisible: false,
                       todayDecoration: BoxDecoration(),

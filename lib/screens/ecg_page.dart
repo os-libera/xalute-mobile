@@ -178,11 +178,11 @@ class _EcgPageState extends State<EcgPage> {
       body: Stack(
         children: [
           SafeArea(
-            top: false,
+            top: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 48),
+                const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -206,7 +206,7 @@ class _EcgPageState extends State<EcgPage> {
                             Row(
                               children: const [
                                 Text(
-                                  "건강 점수는 72점.",
+                                  "건강 점수는 72점",
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 24,
@@ -256,7 +256,7 @@ class _EcgPageState extends State<EcgPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 5),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -331,7 +331,7 @@ class _EcgPageState extends State<EcgPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 5),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,

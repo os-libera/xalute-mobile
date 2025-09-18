@@ -206,7 +206,7 @@ class _EcgPageState extends State<EcgPage> {
                             Row(
                               children: const [
                                 Text(
-                                  "건강 점수는 72",
+                                  "건강 점수는 72점.",
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 24,

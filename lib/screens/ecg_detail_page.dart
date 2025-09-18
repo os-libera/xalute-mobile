@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 class EcgDetailPage extends StatefulWidget {
   final String txtPath;
@@ -101,13 +102,13 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           debugPrint('❌ 서버 오류: ${response.reasonPhrase}');
         }
       }
-
       // JSON에서 r_peaks, distances 불러오기
       if (widget.jsonPath.isNotEmpty && File(widget.jsonPath).existsSync()) {
         final jsonStr = await File(widget.jsonPath).readAsString();
         final jsonData = jsonDecode(jsonStr);
         if (jsonData['result'] is Map<String, dynamic>) {
-          distances = List<double>.from(jsonData['result']['distance_from_median'] ?? []);
+          final rawDistances = jsonData['result']['distance_from_median'] ?? [];
+          distances = rawDistances.map<double>((e) => (e as num).toDouble()).toList();
           rPeaks = List<int>.from(jsonData['result']['r_peaks'] ?? []);
         }
       }
@@ -178,7 +179,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
     debugPrint('--- 비정상 R-R 간격 데이터 필터링 시작 ---');
     for (int i = 0; i < distances.length; i++) {
-      if (i < distances.length && (i * 2 + 1) < rPeaks.length) {
+      if ((i * 2 + 1) < rPeaks.length) {
         if (distances[i] > rrThreshold) {
           filteredDistances.add(distances[i]);
           filteredRPeaks.add(rPeaks[i * 2]);
@@ -192,8 +193,8 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
     final adjustedSpots = spots;
     final xMax = adjustedSpots.last.x;
-    final yMin = adjustedSpots.map((e) => e.y).reduce((a, b) => a < b ? a : b);
-    final yMax = adjustedSpots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+    final yMin = adjustedSpots.map((e) => e.y.toDouble()).reduce((a, b) => a < b ? a : b);
+    final yMax = adjustedSpots.map((e) => e.y.toDouble()).reduce((a, b) => a > b ? a : b);
     final chartWidth = xMax * 50 * zoomScale;
 
     return GestureDetector(
@@ -204,7 +205,8 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       onScaleUpdate: (details) {
         setState(() {
           //final newScale = baseScale * details.scale;
-          final newScale = baseScale * (1 + (details.scale - 1) * 10);
+          //final newScale = baseScale * (1 + (details.scale - 1) * 10);
+          final newScale = baseScale * details.scale;
           zoomScale = newScale.clamp(1.0, 4.0);
         });
       },
@@ -212,8 +214,8 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
         height: 500,
         color: Colors.transparent,
         child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal, // 좌우만 스크롤 가능
-          physics: const ClampingScrollPhysics(), // bounce 제거
+          scrollDirection: Axis.horizontal,
+          physics: const ClampingScrollPhysics(),
           child: SizedBox(
             width: chartWidth,
             height: 300,
@@ -261,46 +263,47 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                 lineTouchData: LineTouchData(enabled: false),
                 rangeAnnotations: isFirstSignal
                     ? RangeAnnotations(
-                  verticalRangeAnnotations: List.generate(distances.length ~/ 2, (i) {
-                    if (rPeaks.length <= i * 2 + 1 || rPeaks[i * 2 + 1] >= spots.length) return null;
-                    final rPeak1Index = i * 2;
-                    final rPeak2Index = i * 2 + 1;
-                    if (rPeak2Index >= filteredRPeaks.length || filteredRPeaks[rPeak2Index] >= spots.length) {
-                      return null;
+                  verticalRangeAnnotations: () {
+                    List<VerticalRangeAnnotation> annotations = [];
+                    for (int i = 0; i < filteredRPeaks.length ~/ 2; i++) {
+                      final rPeak1Index = filteredRPeaks[i * 2];
+                      final rPeak2Index = filteredRPeaks[i * 2 + 1];
+
+                      if (rPeak2Index < spots.length) {
+                        final x1 = spots[rPeak1Index].x;
+                        final x2 = spots[rPeak2Index].x;
+                        annotations.add(
+                          VerticalRangeAnnotation(
+                            x1: x1,
+                            x2: x2,
+                            color: const Color(0x33FB755B),
+                          ),
+                        );
+                      }
                     }
-                    final x1 = spots[filteredRPeaks[rPeak1Index]].x;
-                    final x2 = spots[filteredRPeaks[rPeak2Index]].x;
-                    return VerticalRangeAnnotation(
-                      x1: x1,
-                      x2: x2,
-                      color: const Color(0x33FB755B),
-                    );
-                  }).whereType<VerticalRangeAnnotation>().toList(),
+                    return annotations;
+                  }(),
                 )
                     : const RangeAnnotations(),
                 lineBarsData: [
                   if (isFirstSignal)
-                    ...List.generate(filteredDistances.length, (i) {
-                      final rPeak1Index = i * 2;
-                      final rPeak2Index = i * 2 + 1;
-                      if (rPeak2Index >= filteredRPeaks.length) return null;
-
-                      final x1 = filteredRPeaks[rPeak1Index];
-                      final x2 = filteredRPeaks[rPeak2Index];
-
-                      final rangeSpots = spots
-                          .where((e) => e.x >= spots[x1].x && e.x <= spots[x2].x)
-                          .map((e) => FlSpot(e.x, e.y))
-                          .toList();
-
-                      return LineChartBarData(
-                        spots: rangeSpots,
-                        isCurved: false,
-                        barWidth: 0,
-                        color: Colors.transparent,
-                        dotData: FlDotData(show: false),
-                      );
-                    }).whereType<LineChartBarData>(),
+                    LineChartBarData(
+                      spots: rPeaks
+                          .where((x) => x < spots.length)
+                          .map((x) => FlSpot(spots[x].x, spots[x].y))
+                          .toList(),
+                      isCurved: false,
+                      color: Colors.transparent, // 라인은 투명하게
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+                          radius: 2,
+                          strokeWidth: 1,
+                          color: const Color(0xFFF9FAFE),
+                          strokeColor: const Color(0xFFFB755B),
+                        ),
+                      ),
+                    ),
 
                   LineChartBarData(
                     spots: adjustedSpots,
@@ -368,23 +371,23 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(DateFormat('yyyy.MM.dd (EEE) HH:mm', 'en_US').format(widget.timestamp)),
+                  const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(DateFormat('yyyy년 MM월 dd일 (EEE) HH:mm', 'ko_KR').format(widget.timestamp)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Result', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(widget.result == '이상 소견 의심' ? 'Suspected Abnormality' : 'Normal'),
+                  const Text('결과', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(widget.result == '이상 소견 의심' ? '이상 소견 의심' : '정상'),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Device Type', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('기기 종류', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(widget.deviceType),
                 ],
               ),

@@ -114,8 +114,34 @@ class _EcgPageState extends State<EcgPage> {
     } else {
       setState(() => isLoading = true);
       try {
-        await Provider.of<EcgDataService>(context, listen: false)
-            .fetchEcgData();
+        final ecgService = Provider.of<EcgDataService>(context, listen: false);
+        final initialEntriesCount = ecgService.entries.length;
+
+        await ecgService.fetchEcgData();
+        final newEntriesCount = ecgService.entries.length;
+        if (newEntriesCount <= initialEntriesCount) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text("알림"),
+                content: const Text("ECG 데이터를 측정해주세요."),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("확인"),
+                  ),
+                ],
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${newEntriesCount - initialEntriesCount}개의 새로운 ECG 데이터를 가져왔습니다.')),
+            );
+          }
+        }
       } catch (e, stack) {
         ScaffoldMessenger.of(context)
             .showSnackBar(
@@ -167,7 +193,7 @@ class _EcgPageState extends State<EcgPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "${ecgService.userName}'s",
+                              "${ecgService.userName}님",
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 24,
@@ -230,7 +256,7 @@ class _EcgPageState extends State<EcgPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -278,7 +304,6 @@ class _EcgPageState extends State<EcgPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
@@ -291,8 +316,7 @@ class _EcgPageState extends State<EcgPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         Column(children: [
-                          const Text("총 측정 횟수",
-                              style: TextStyle(fontSize: 14)),
+                          const Text("총 측정 횟수", style: TextStyle(fontSize: 14)),
                           Text("${monthResults.length} 번",
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold))
@@ -300,9 +324,8 @@ class _EcgPageState extends State<EcgPage> {
                         Column(children: [
                           const Text("이상 소견 의심",
                               style: TextStyle(fontSize: 14)),
-                          Text("$abnormalMonthTotal 번",
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold))
+                          Text("$abnormalMonthTotal 번", style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold))
                         ])
                       ],
                     ),
@@ -328,12 +351,12 @@ class _EcgPageState extends State<EcgPage> {
                     calendarFormat: CalendarFormat.month,
                     startingDayOfWeek: StartingDayOfWeek.sunday,
                     headerVisible: false,
-                    calendarStyle: CalendarStyle(
+                    calendarStyle: const CalendarStyle(
                       outsideDaysVisible: false,
-                      todayDecoration: const BoxDecoration(),
-                      todayTextStyle: const TextStyle(
+                      todayDecoration: BoxDecoration(),
+                      todayTextStyle: TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.black),
-                      selectedDecoration: const BoxDecoration(
+                      selectedDecoration: BoxDecoration(
                           color: Color(0xFFFFEEEA), shape: BoxShape.circle),
                     ),
                     enabledDayPredicate: (day) {
@@ -346,8 +369,8 @@ class _EcgPageState extends State<EcgPage> {
                     },
                     calendarBuilders: CalendarBuilders(
                       defaultBuilder: (context, day, _) {
-                        final normalized = DateTime.utc(
-                            day.year, day.month, day.day);
+                        final normalized = DateTime.utc(day.year, day.month, day
+                            .day);
                         final statuses = ecgService.statusMap[normalized];
                         if (statuses == null) return null;
                         final abnormalCount = statuses
@@ -357,8 +380,8 @@ class _EcgPageState extends State<EcgPage> {
                         return Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('${day.day}', style: const TextStyle(
-                                color: Colors.black)),
+                            Text('${day.day}',
+                                style: const TextStyle(color: Colors.black)),
                             RichText(
                               text: TextSpan(
                                 children: [
@@ -381,27 +404,25 @@ class _EcgPageState extends State<EcgPage> {
                   )
                       : const SizedBox.shrink(),
                 ),
-
                 if (!isCalendarExpanded)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 8),
                     child: Center(
                       child: Text(
-                        "${DateFormat('yyyy.MM').format(focusedDay)} 캘린더가 접혀있습니다.",
+                        "${DateFormat('yyyy.MM').format(
+                            focusedDay)} 캘린더가 접혀있습니다.",
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ),
                   ),
-
-                const SizedBox(height: 8),
                 const Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.circle, color: Color(0xFFFB755B), size: 8),
                       SizedBox(width: 4),
-                      Text("이상 소견 의심",
-                          style: TextStyle(fontSize: 12)),
+                      Text("이상 소견 의심", style: TextStyle(fontSize: 12)),
                       SizedBox(width: 16),
                       Icon(Icons.circle, color: Colors.grey, size: 8),
                       SizedBox(width: 4),
@@ -409,64 +430,59 @@ class _EcgPageState extends State<EcgPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-
+                const SizedBox(height: 10), // Adding a small space here
                 Expanded(
-                  child: Padding(
+                  child: ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ListView.builder(
-                      itemCount: selectedResults.length,
-                      itemBuilder: (context, index) {
-                        final entry = selectedResults[index];
-                        final formatted = DateFormat('MM d, HH:mm').format(
-                            entry.dateTime);
-                        final isAbnormal = entry.result == '이상 소견 의심';
-                        final resultText = isAbnormal
-                            ? '이상 소견 의심'
-                            : '정상';
-
-                        return InkWell(
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/ecgDetail',
-                              arguments: entry,
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  formatted,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                                Row(
-                                  children: [
-                                    Text(
-                                      resultText,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: isAbnormal ? const Color(
-                                            0xFFFB755B) : Colors.grey[700],
-                                      ),
+                    itemCount: selectedResults.length,
+                    separatorBuilder: (context, index) =>
+                    const Divider(height: 1, color: Colors.grey),
+                    itemBuilder: (context, index) {
+                      final entry = selectedResults[index];
+                      final formatted = DateFormat('MM월 d일 HH:mm').format(
+                          entry.dateTime);
+                      final isAbnormal = entry.result == '이상 소견 의심';
+                      final resultText = isAbnormal ? '이상 소견 의심' : '정상';
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/ecgDetail',
+                            arguments: entry,
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                formatted,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    resultText,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: isAbnormal ? const Color(
+                                          0xFFFB755B) : Colors.grey[700],
                                     ),
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.chevron_right,
-                                        color: Colors.grey),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                      Icons.chevron_right, color: Colors.grey),
+                                ],
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 12),
@@ -491,7 +507,6 @@ class _EcgPageState extends State<EcgPage> {
               ],
             ),
           ),
-
           if (isLoading)
             AbsorbPointer(
               absorbing: true,

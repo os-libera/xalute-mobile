@@ -59,7 +59,7 @@ enum Storage {
     @objc class AppDelegate: FlutterAppDelegate {
         private let healthStore = HKHealthStore()
         private var methodChannel: FlutterMethodChannel?
-        private let predictURL = URL(string: "http://34.69.44.173:7000/predict_single_lead")!
+        private let predictURL = URL(string: "http://34.69.44.173:7001/predict_single_lead")!
         private let addDataURL = URL(string: "http://34.44.245.53:3000/mutation/addData")!
         private var lastFetchDate: Date?
         private var savedResults: [ECGUploadResult] = []

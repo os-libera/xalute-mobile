@@ -48,6 +48,7 @@ flutter:
   - assets/icon/profile.png
   - assets/lottie/Animation.json
   - assets/ecg_samples/
+  - assets/python
 
   fonts:
     - family: SeoulNam

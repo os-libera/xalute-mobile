@@ -82,13 +82,14 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
         final request = http.MultipartRequest(
           'POST',
-          Uri.parse('http://34.69.44.173:7000/predict12lead'),
+          Uri.parse('http://34.69.44.173:7001/predict12lead/512'),// 512-> sampling rate
         );
         request.files.add(await http.MultipartFile.fromPath('file', txtFile.path));
         final streamedResponse = await request.send();
         final response = await http.Response.fromStream(streamedResponse);
 
         if (response.statusCode == 200) {
+          debugPrint("Response: ${response.body}");
           final jsonData = jsonDecode(response.body);
           final resultArray = jsonData['result'];
           final leads = resultArray[0][0].sublist(3, 14);
@@ -98,6 +99,12 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                   (j) => FlSpot(j * (10.0 / 512.0), leads[i][j].toDouble()),
             );
           }
+          final qtStData = jsonData['qt_st'];
+          final qtIntervals = qtStData['qt_intervals'];
+          final stSegments = qtStData['st_segments'];
+
+          debugPrint('QT Intervals: $qtIntervals');
+          debugPrint('ST Segments: $stSegments');
         } else {
           debugPrint('❌ 서버 오류: ${response.reasonPhrase}');
         }
@@ -163,7 +170,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     );
   }
 
-  double baseScale = 1.0; // 클래스 바깥 or 클래스 맨 위에 추가
+  double baseScale = 1.0;
 
   Widget _buildChart() {
     final spots = leadData[selectedLead];
@@ -177,7 +184,7 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     List<int> filteredRPeaks = [];
     List<double> filteredDistances = [];
 
-    debugPrint('--- 비정상 R-R 간격 데이터 필터링 시작 ---');
+    debugPrint('--- 비정상 R-R 간격 데이터 필터링 ---');
     for (int i = 0; i < distances.length; i++) {
       if ((i * 2 + 1) < rPeaks.length) {
         if (distances[i] > rrThreshold) {
@@ -185,11 +192,11 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           filteredRPeaks.add(rPeaks[i * 2]);
           filteredRPeaks.add(rPeaks[i * 2 + 1]);
 
-          debugPrint('임계값 초과 감지: distance=${distances[i]}, R-peaks 인덱스: [${rPeaks[i * 2]}, ${rPeaks[i * 2 + 1]}]');
+          debugPrint('임계값 초과: distance=${distances[i]}, R-peaks 인덱스: [${rPeaks[i * 2]}, ${rPeaks[i * 2 + 1]}]');
         }
       }
     }
-    debugPrint('--- 필터링 완료: ${filteredDistances.length}개 발견 ---');
+    debugPrint('--- 필터링 완료: ${filteredDistances.length}개 ---');
 
     final adjustedSpots = spots;
     final xMax = adjustedSpots.last.x;

@@ -36,6 +36,9 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
   final ScrollController _scrollController = ScrollController();
   final TransformationController _transformationController = TransformationController();
 
+  List<double> qtIntervals = [];
+  List<double> stSegments = [];
+
   @override
   void initState() {
     super.initState();
@@ -100,11 +103,20 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
             );
           }
           final qtStData = jsonData['qt_st'];
-          final qtIntervals = qtStData['qt_intervals'];
-          final stSegments = qtStData['st_segments'];
+          if (qtStData != null) {
+            qtIntervals = (qtStData['qt_intervals'] as List<dynamic>)
+                .where((value) => value is num && !value.isNaN)
+                .map((e) => (e as num).toDouble())
+                .toList();
 
-          debugPrint('QT Intervals: $qtIntervals');
-          debugPrint('ST Segments: $stSegments');
+            stSegments = (qtStData['st_segments'] as List<dynamic>)
+                .where((value) => value is num && !value.isNaN)
+                .map((e) => (e as num).toDouble())
+                .toList();
+
+            debugPrint('QT Intervals: $qtIntervals');
+            debugPrint('ST Segments: $stSegments');
+          }
         } else {
           debugPrint('❌ 서버 오류: ${response.reasonPhrase}');
         }

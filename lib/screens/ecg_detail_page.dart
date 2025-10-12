@@ -92,9 +92,12 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
         final response = await http.Response.fromStream(streamedResponse);
 
         if (response.statusCode == 200) {
+          final sanitizedBody = response.body.replaceAll('NaN', 'null');
           debugPrint("Response: ${response.body}");
+
           final jsonData = jsonDecode(response.body);
-          /**final resultArray = jsonData['result'];
+          final resultArray = jsonData['result'];
+
           final leads = resultArray[0][0].sublist(3, 14);
           for (int i = 0; i < 11; i++) {
             leadData[i + 1] = List.generate(
@@ -102,43 +105,21 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                   (j) => FlSpot(j * (10.0 / 512.0), leads[i][j].toDouble()),
             );
           }
+
           final qtStData = jsonData['qt_st'];
           if (qtStData != null) {
             qtIntervals = (qtStData['qt_intervals'] as List<dynamic>)
-                .where((value) => value is num && !value.isNaN)
+                .where((value) => value != null)
                 .map((e) => (e as num).toDouble())
                 .toList();
 
             stSegments = (qtStData['st_segments'] as List<dynamic>)
-                .where((value) => value is num && !value.isNaN)
+                .where((value) => value != null)
                 .map((e) => (e as num).toDouble())
                 .toList();
 
             debugPrint('QT Intervals: $qtIntervals');
             debugPrint('ST Segments: $stSegments');
-          }**/
-          final resultArray = jsonData['result'] as List<dynamic>;
-          final allLeads = resultArray[0] as List<dynamic>;
-
-          for (int i = 0; i < allLeads.length; i++) {
-            final List<dynamic> lead = allLeads[i];
-            leadData[i] = List.generate(
-              lead.length,
-                  (j) => FlSpot(j * (10.0 / 512.0), (lead[j] as num).toDouble()),
-            );
-          }
-          
-          final qtStData = jsonData['qt_st'];
-          if (qtStData != null) {
-            qtIntervals = (qtStData['qt_intervals'] as List<dynamic>)
-                .where((value) => value is num && !value.isNaN)
-                .map((e) => (e as num).toDouble())
-                .toList();
-
-            stSegments = (qtStData['st_segments'] as List<dynamic>)
-                .where((value) => value is num && !value.isNaN)
-                .map((e) => (e as num).toDouble())
-                .toList();
           }
         } else {
           debugPrint('❌ 서버 오류: ${response.reasonPhrase}');

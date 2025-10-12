@@ -93,11 +93,10 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
         if (response.statusCode == 200) {
           final sanitizedBody = response.body.replaceAll('NaN', 'null');
-          debugPrint("Response: ${response.body}");
+          debugPrint("Response: ${sanitizedBody}");
+          final jsonData = jsonDecode(sanitizedBody);
 
-          final jsonData = jsonDecode(response.body);
           final resultArray = jsonData['result'];
-
           final leads = resultArray[0][0].sublist(3, 14);
           for (int i = 0; i < 11; i++) {
             leadData[i + 1] = List.generate(
@@ -414,10 +413,97 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
                   Text(widget.deviceType),
                 ],
               ),
+              _buildQtStResult(),
             ],
           ),
         ),
       ),
     );
   }
+  Widget _buildQtStResult() {
+    if (qtIntervals.isEmpty && stSegments.isEmpty) {
+      return const Text('QT/ST 데이터가 없습니다.',
+          style: TextStyle(color: Colors.grey, fontSize: 13));
+    }
+
+    double avgQt = qtIntervals.isNotEmpty
+        ? qtIntervals.reduce((a, b) => a + b) / qtIntervals.length
+        : 0.0;
+    double avgSt = stSegments.isNotEmpty
+        ? stSegments.reduce((a, b) => a + b) / stSegments.length
+        : 0.0;
+
+    String qtStatus;
+    if (avgQt < 350) {
+      qtStatus = 'QT 단축 의심';
+    } else if (avgQt > 470) {
+      qtStatus = 'QT 연장 의심';
+    } else {
+      qtStatus = '정상';
+    }
+
+    String stStatus;
+    if (avgSt < -0.1) {
+      stStatus = 'ST 하강 의심';
+    } else if (avgSt > 0.1) {
+      stStatus = 'ST 상승 의심';
+    } else {
+      stStatus = '정상';
+    }
+
+    Color qtColor =
+    (qtStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
+    Color stColor =
+    (stStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'QT/ST 분석 결과',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('QT 평균 (ms):', style: TextStyle(fontSize: 13)),
+              Text(avgQt.toStringAsFixed(1),
+                  style: const TextStyle(fontSize: 13)),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('ST 평균 (mV):', style: TextStyle(fontSize: 13)),
+              Text(avgSt.toStringAsFixed(6),
+                  style: const TextStyle(fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('QT 판정: $qtStatus',
+                  style: TextStyle(fontSize: 13, color: qtColor)),
+              Text('ST 판정: $stStatus',
+                  style: TextStyle(fontSize: 13, color: stColor)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 }

@@ -479,9 +479,9 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoRow('QT', '$qtStatus$qtDetail', color: qtColor),
+        _buildInfoRow('QT 간격', '$qtStatus$qtDetail', color: qtColor),
         const SizedBox(height: 8),
-        _buildInfoRow('ST', stStatus, color: stColor),
+        _buildInfoRow('ST 분절', stStatus, color: stColor),
       ],
     );
   }

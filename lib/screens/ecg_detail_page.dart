@@ -426,27 +426,35 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           style: TextStyle(color: Colors.grey, fontSize: 13));
     }
 
-    double avgQt = qtIntervals.isNotEmpty
-        ? qtIntervals.reduce((a, b) => a + b) / qtIntervals.length
-        : 0.0;
-    double avgSt = stSegments.isNotEmpty
-        ? stSegments.reduce((a, b) => a + b) / stSegments.length
-        : 0.0;
+    int qtShortCount = 0;
+    int qtLongCount = 0;
+    for (double qt in qtIntervals) {
+      if (qt < 350) qtShortCount++;
+      else if (qt > 470) qtLongCount++;
+    }
 
     String qtStatus;
-    if (avgQt < 350) {
+    if (qtShortCount > 0) {
       qtStatus = 'QT 단축 의심';
-    } else if (avgQt > 470) {
+    } else if (qtLongCount > 0) {
       qtStatus = 'QT 연장 의심';
     } else {
       qtStatus = '정상';
     }
 
+    int stElevCount = 0;
+    int stDepressCount = 0;
+    for (double st in stSegments) {
+      double stMv = st;
+      if (stMv > 0.1) stElevCount++;
+      else if (stMv < -0.1) stDepressCount++;
+    }
+
     String stStatus;
-    if (avgSt < -0.1) {
-      stStatus = 'ST 하강 의심';
-    } else if (avgSt > 0.1) {
+    if (stElevCount > 0) {
       stStatus = 'ST 상승 의심';
+    } else if (stDepressCount > 0) {
+      stStatus = 'ST 하강 의심';
     } else {
       stStatus = '정상';
     }
@@ -478,32 +486,23 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('QT 평균 (ms):', style: TextStyle(fontSize: 13)),
-              Text(avgQt.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 13)),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('ST 평균 (mV):', style: TextStyle(fontSize: 13)),
-              Text(avgSt.toStringAsFixed(6),
-                  style: const TextStyle(fontSize: 13)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
               Text('QT 판정: $qtStatus',
                   style: TextStyle(fontSize: 13, color: qtColor)),
               Text('ST 판정: $stStatus',
                   style: TextStyle(fontSize: 13, color: stColor)),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(
+            'QT 단축: $qtShortCount개, QT 연장: $qtLongCount개',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          Text(
+            'ST 상승: $stElevCount개, ST 하강: $stDepressCount개',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ],
       ),
     );
   }
-
 }

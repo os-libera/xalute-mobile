@@ -465,29 +465,40 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     Color qtColor = (qtStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
     Color stColor = (stStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
 
+    String qtDetail = '';
+    if (qtShortCount > 0) {
+      qtDetail = '(QT 단축: $qtShortCount개)';
+    } else if (qtLongCount > 0) {
+      qtDetail = '(QT 연장: $qtLongCount개)';
+    }
+
     return Padding(
-      padding: const EdgeInsets.only(top: 4.0),
+      padding: const EdgeInsets.only(top: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('QT: ',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(qtStatus, style: TextStyle(color: qtColor, fontSize: 13)),
-              const SizedBox(width: 16),
-              Text('ST: ',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(stStatus, style: TextStyle(color: stColor, fontSize: 13)),
+              const Text('QT', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                '$qtStatus $qtDetail',
+                style: TextStyle(fontSize: 13, color: qtColor),
+                textAlign: TextAlign.right,
+              ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            'QT 단축: $qtShortCount개, QT 연장: $qtLongCount개 / '
-                'ST 상승: $stElevCount개, ST 하강: $stDepressCount개',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('ST', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                stStatus,
+                style: TextStyle(fontSize: 13, color: stColor),
+                textAlign: TextAlign.right,
+              ),
+            ],
           ),
         ],
       ),

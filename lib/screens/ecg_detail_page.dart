@@ -368,7 +368,10 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('측정 결과', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
+        title: const Text(
+          '측정 결과',
+          style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold),
+        ),
         iconTheme: const IconThemeData(color: Colors.black),
         centerTitle: true,
       ),
@@ -376,44 +379,36 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
         child: Padding(
-          //padding: const EdgeInsets.all(10),
-          //padding: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AspectRatio(
-                aspectRatio: 1.7,
-                child: _buildChart(),
-              ),
+              AspectRatio(aspectRatio: 1.7, child: _buildChart()),
               const SizedBox(height: 20),
               _buildLeadButtons(),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('날짜', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(DateFormat('yyyy년 MM월 dd일 (EEE) HH:mm', 'ko_KR').format(widget.timestamp)),
-                ],
+
+              // ===== 정보 라인들 =====
+              _buildInfoRow(
+                '날짜',
+                DateFormat('yyyy년 MM월 dd일 (EEE) HH:mm', 'ko_KR')
+                    .format(widget.timestamp),
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('결과', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(widget.result == '이상 소견 의심' ? '이상 소견 의심' : '정상'),
-                ],
+              _buildInfoRow(
+                '결과',
+                widget.result == '이상 소견 의심' ? '이상 소견 의심' : '정상',
+                color: widget.result == '이상 소견 의심'
+                    ? const Color(0xFFFB755B)
+                    : Colors.green,
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('기기 종류', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(widget.deviceType),
-                ],
-              ),
-              _buildQtStResult(),
+
+              // QT/ST 결과 표시
+              _buildQtStRows(),
+
+              const SizedBox(height: 8),
+              _buildInfoRow('기기 종류', widget.deviceType),
             ],
           ),
         ),
@@ -421,7 +416,17 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     );
   }
 
-  Widget _buildQtStResult() {
+  Widget _buildInfoRow(String label, String value, {Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(color: color ?? Colors.black)),
+      ],
+    );
+  }
+
+  Widget _buildQtStRows() {
     if (qtIntervals.isEmpty && stSegments.isEmpty) {
       return const Text(
         'QT/ST 데이터가 없습니다.',
@@ -448,9 +453,8 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
     int stElevCount = 0;
     int stDepressCount = 0;
     for (double st in stSegments) {
-      double stMv = st;
-      if (stMv > 0.1) stElevCount++;
-      else if (stMv < -0.1) stDepressCount++;
+      if (st > 0.1) stElevCount++;
+      else if (st < -0.1) stDepressCount++;
     }
 
     String stStatus;
@@ -467,41 +471,18 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
     String qtDetail = '';
     if (qtShortCount > 0) {
-      qtDetail = '(QT 단축: $qtShortCount개)';
+      qtDetail = ' (QT 단축: $qtShortCount개)';
     } else if (qtLongCount > 0) {
-      qtDetail = '(QT 연장: $qtLongCount개)';
+      qtDetail = ' (QT 연장: $qtLongCount개)';
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('QT', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text(
-                '$qtStatus $qtDetail',
-                style: TextStyle(fontSize: 13, color: qtColor),
-                textAlign: TextAlign.right,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('ST', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text(
-                stStatus,
-                style: TextStyle(fontSize: 13, color: stColor),
-                textAlign: TextAlign.right,
-              ),
-            ],
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildInfoRow('QT', '$qtStatus$qtDetail', color: qtColor),
+        const SizedBox(height: 8),
+        _buildInfoRow('ST', stStatus, color: stColor),
+      ],
     );
   }
 }

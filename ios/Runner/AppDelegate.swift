@@ -67,6 +67,7 @@ enum Storage {
         private let rrThreshold: Double = 0.31
         
         override func application(
+        override func application(
             _ application: UIApplication,
             didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
         ) -> Bool {

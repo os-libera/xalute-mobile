@@ -188,8 +188,18 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
   double baseScale = 1.0;
 
   Widget _buildChart() {
-    final spots = leadData[selectedLead];
+    List<FlSpot> spots = leadData[selectedLead];
+
+    if (selectedLead == 0 && spots.isNotEmpty) {
+      spots = spots.where((spot) => spot.x >= 5.0).toList();
+      if (spots.isNotEmpty) {
+        final baseX = spots.first.x;
+        spots = spots.map((e) => FlSpot(e.x - baseX, e.y)).toList();
+      }
+    }
+
     final isFirstSignal = selectedLead == 0;
+
 
     if (spots.isEmpty) {
       return const Center(child: Text('해당 리드에 대한 데이터가 없습니다.', style: TextStyle(fontSize: 14)));

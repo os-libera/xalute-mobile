@@ -420,10 +420,13 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       ),
     );
   }
+
   Widget _buildQtStResult() {
     if (qtIntervals.isEmpty && stSegments.isEmpty) {
-      return const Text('QT/ST 데이터가 없습니다.',
-          style: TextStyle(color: Colors.grey, fontSize: 13));
+      return const Text(
+        'QT/ST 데이터가 없습니다.',
+        style: TextStyle(color: Colors.grey, fontSize: 13),
+      );
     }
 
     int qtShortCount = 0;
@@ -459,46 +462,31 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
       stStatus = '정상';
     }
 
-    Color qtColor =
-    (qtStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
-    Color stColor =
-    (stStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
+    Color qtColor = (qtStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
+    Color stColor = (stStatus == '정상') ? Colors.green : const Color(0xFFFB755B);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'QT/ST 분석 결과',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('QT 판정: $qtStatus',
-                  style: TextStyle(fontSize: 13, color: qtColor)),
-              Text('ST 판정: $stStatus',
-                  style: TextStyle(fontSize: 13, color: stColor)),
+              Text('QT: ',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(qtStatus, style: TextStyle(color: qtColor, fontSize: 13)),
+              const SizedBox(width: 16),
+              Text('ST: ',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(stStatus, style: TextStyle(color: stColor, fontSize: 13)),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
           Text(
-            'QT 단축: $qtShortCount개, QT 연장: $qtLongCount개',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          Text(
-            'ST 상승: $stElevCount개, ST 하강: $stDepressCount개',
+            'QT 단축: $qtShortCount개, QT 연장: $qtLongCount개 / '
+                'ST 상승: $stElevCount개, ST 하강: $stDepressCount개',
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],

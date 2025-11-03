@@ -48,8 +48,8 @@ flutter:
   - assets/icon/profile.png
   - assets/lottie/Animation.json
   - assets/ecg_samples/
-  - assets/dumy/
-  - assets/hospital/
+  - assets/ecg_samples/dumy/
+  - assets/ecg_samples/hospital/
 
 
   fonts:

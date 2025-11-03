@@ -523,54 +523,6 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
         "measurement": "2023-11-30 11:25:16",
         "surgeryDate": "2023-11-29",
         "disease": "Persistent atrial fibrillation"
-      },
-      "ecg_2025-11-05T28-28-01_normal_raw": {
-        "name": "wg28",
-        "measurement": "2023-11-29 13:38:22",
-        "surgeryDate": "2023-11-30",
-        "disease": "Persistent atrial fibrillation"
-      },
-      "ecg_2025-11-05T28-28-02_abnormal_raw": {
-        "name": "wg28",
-        "measurement": "2023-12-01 11:08:25",
-        "surgeryDate": "2023-11-30",
-        "disease": "Persistent atrial fibrillation"
-      },
-      "ecg_2025-11-05T44-44-01_normal_raw": {
-        "name": "wg44",
-        "measurement": "2024-01-09 15:30:41",
-        "surgeryDate": "2024-01-10",
-        "disease": "Paroxysmal atrial fibrillation"
-      },
-      "ecg_2025-11-05T44-44-02_normal_raw": {
-        "name": "wg44",
-        "measurement": "2024-01-11 16:40:06",
-        "surgeryDate": "2024-01-10",
-        "disease": "Paroxysmal atrial fibrillation"
-      },
-      "ecg_2025-11-05T46-46-01_abnormal_raw": {
-        "name": "wg46",
-        "measurement": "2024-01-09 16:22:05",
-        "surgeryDate": "2024-01-10",
-        "disease": "Paroxysmal atrial fibrillation"
-      },
-      "ecg_2025-11-05T46-46-02_normal_raw": {
-        "name": "wg46",
-        "measurement": "2024-01-11 16:42:37",
-        "surgeryDate": "2024-01-10",
-        "disease": "Paroxysmal atrial fibrillation"
-      },
-      "ecg_2025-11-05T63-63-01_normal_raw": {
-        "name": "wg63",
-        "measurement": "2024-03-19 16:07:29",
-        "surgeryDate": "2024-03-20",
-        "disease": "paroxymal atrial fibrillation"
-      },
-      "ecg_2025-11-05T63-63-02_abnormal_raw": {
-        "name": "wg63",
-        "measurement": "2024-03-21 11:56:14",
-        "surgeryDate": "2024-03-20",
-        "disease": "paroxymal atrial fibrillation"
       }
     };
 

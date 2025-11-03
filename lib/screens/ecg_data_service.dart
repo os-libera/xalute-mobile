@@ -259,19 +259,18 @@ class EcgDataService extends ChangeNotifier {
       for (var day = 1; day <= 31; day++)
         'ecg_2025-07-${day.toString().padLeft(2, "0")}T09-00-00_abnormal_raw',
 
-      'ecg_2025-07-25T12-30-00_abnormal_raw',
-      'ecg_2025-07-25T15-20-00_abnormal_raw',
-      'ecg_2025-10-14T13-13-13_normal_raw',
-      'ecg_2025-10-14T14-14-14_abnormal_raw',
-      'ecg_2025-10-14T15-15-15_normal_raw',
-      'ecg_2025-10-14T16-16-16_abnormal_raw',
-      'ecg_2025-10-14T17-17-17_normal_raw',
-      'ecg_2025-10-14T18-18-18_abnormal_raw',
-      'ecg_2025-10-14T19-19-19_abnormal_raw',
-      'ecg_2025-10-14T20-20-20_normal_raw',
-      'ecg_2025-10-14T21-21-21_abnormal_raw',
-      'ecg_2025-10-14T22-22-22_abnormal_raw',
-      'ecg_2025-10-14T23-23-23_abnormal_raw',
+      'ecg_2025-11-03T17-17-01_normal_raw',
+      'ecg_2025-11-03T17-17-02_normal_raw',
+      'ecg_2025-11-03T21-21-01_abnormal_raw',
+      'ecg_2025-11-03T21-21-01_normal_raw',
+      'ecg_2025-11-03T23-23-01_abnormal_raw',
+      'ecg_2025-11-03T23-23-01_normal_raw',
+      'ecg_2025-11-03T26-26-01_abnormal_raw',
+      'ecg_2025-11-03T26-26-01_abnormal_raw',
+      'ecg_2025-11-03T27-27-01_abnormal_raw',
+      'ecg_2025-11-03T27-27-01_abnormal_raw',
+      'ecg_2025-11-03T28-28-01_normal_raw',
+      'ecg_2025-11-03T28-28-01_abnormal_raw',
     ];
 
     final appDir = await getApplicationDocumentsDirectory();
@@ -287,7 +286,7 @@ class EcgDataService extends ChangeNotifier {
         String basePath;
         if (name.contains('07')) {
           basePath = 'assets/ecg_samples/dumy';
-        } else if (name.contains('10-14')) {
+        } else if (name.contains('11-03')) {
           basePath = 'assets/ecg_samples/hospital';
         } else {
           basePath = 'assets/ecg_samples';

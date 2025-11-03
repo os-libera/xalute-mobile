@@ -488,12 +488,6 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
         "surgeryDate": "2023-11-22",
         "disease": "Long-standing persistent atrial fibrillation"
       },
-      "ecg_2025-11-05T22-22-01_abnormal_raw": {
-        "name": "wg22",
-        "measurement": "2023-11-21 14:33:18",
-        "surgeryDate": "2023-11-22",
-        "disease": "Long-standing persistent atrial fibrillation"
-      },
       "ecg_2025-11-05T23-23-01_abnormal_raw": {
         "name": "wg23",
         "measurement": "2023-11-21 14:41:15",

@@ -300,11 +300,10 @@ enum Storage {
             sampleDate: Date,
             completion: @escaping (_ date: String, _ prediction: String, _ txtPath: String, _ jsonPath: String) -> Void
         ) {
-            //setting_page의 이름과 생일을 load
             let prefs = UserDefaults.standard
             let name = prefs.string(forKey: "flutter.username") ?? "Unknown"
             let birth = prefs.string(forKey: "flutter.birthDate") ?? ""
-            //0701start_시간대 변경하여 저장
+
             let dateFormatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -384,14 +383,7 @@ enum Storage {
                         finalPrediction = "normal"
                         return
                     }
-                    /*let filtered: [Double] = (resultDict["distance_from_median"] as? [Any])?
-                        .compactMap { $0 as? Double }
-                        .filter { $0 > self.rrThreshold } ?? []      // rrThreshold == 0.31
-                    resultDict["distance_from_median"] = filtered
-                    json["result"] = resultDict
-                    predict1ResponseData = try? JSONSerialization.data(withJSONObject: json)
-                    finalPrediction = filtered.isEmpty ? "normal" : "abnormal"
-                    */
+
                     let originalDistances: [Double] = (resultDict["distance_from_median"] as? [Any])?
                             .compactMap { $0 as? Double } ?? []
                     let hasAbnormalValue = originalDistances.contains { $0 > self.rrThreshold }
@@ -402,7 +394,7 @@ enum Storage {
                     predict1ResponseData = try? JSONSerialization.data(withJSONObject: json)
                 }.resume()
             }
-            //0717
+
             group.notify(queue: .main) {
                 let baseName = "ecg_\(safeIso)_\(finalPrediction)"
                 

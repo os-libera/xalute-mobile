@@ -284,13 +284,22 @@ class EcgDataService extends ChangeNotifier {
       try {
         debugPrint('📄 샘플 처리 시작: $name');
 
+        String basePath;
+        if (name.contains('07')) {
+          basePath = 'assets/ecg_samples/dumy';
+        } else if (name.contains('10-14')) {
+          basePath = 'assets/ecg_samples/hospital';
+        } else {
+          basePath = 'assets/ecg_samples';
+        }
+
         // Load and write TXT
-        final txtData = await rootBundle.loadString('assets/ecg_samples/$name.txt');
+        final txtData = await rootBundle.loadString('$basePath/$name.txt');
         final txtPath = p.join(appDir.path, '$name.txt');
         await File(txtPath).writeAsString(txtData, flush: true);
 
         // Load and write JSON
-        final jsonData = await rootBundle.loadString('assets/ecg_samples/$name.json');
+        final jsonData = await rootBundle.loadString('$basePath/$name.json');
         final jsonPath = p.join(appDir.path, '$name.json');
         await File(jsonPath).writeAsString(jsonData, flush: true);
 

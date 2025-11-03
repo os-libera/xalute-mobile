@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:math';
+import 'package:path/path.dart' as p;
 
 class EcgDetailPage extends StatefulWidget {
   final String txtPath;
@@ -38,6 +39,11 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
   List<double> qtIntervals = [];
   List<double> stSegments = [];
+
+  String? hospitalName;
+  String? measureDate;
+  String? surgeryDate;
+  String? diseaseName;
 
   @override
   void initState() {
@@ -124,10 +130,19 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
           debugPrint('❌ 서버 오류: ${response.reasonPhrase}');
         }
       }
-      // JSON에서 r_peaks, distances 불러오기
+
       if (widget.jsonPath.isNotEmpty && File(widget.jsonPath).existsSync()) {
         final jsonStr = await File(widget.jsonPath).readAsString();
         final jsonData = jsonDecode(jsonStr);
+
+        if (widget.jsonPath.contains('hospital')) {
+          final hospitalMeta = _getHospitalMeta(widget.jsonPath);
+          hospitalName = hospitalMeta['name'];
+          measureDate = hospitalMeta['measureDate'];
+          surgeryDate = hospitalMeta['surgeryDate'];
+          diseaseName = hospitalMeta['disease'];
+        }
+
         if (jsonData['result'] is Map<String, dynamic>) {
           final rawDistances = jsonData['result']['distance_from_median'] ?? [];
           distances = rawDistances.map<double>((e) => (e as num).toDouble()).toList();
@@ -419,6 +434,17 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
 
               const SizedBox(height: 8),
               _buildInfoRow('기기 종류', widget.deviceType),
+
+              if (widget.jsonPath.contains('hospital')) ...[
+                const SizedBox(height: 8),
+                _buildInfoRow('이름', hospitalName ?? '정보 없음'),
+                const SizedBox(height: 8),
+                _buildInfoRow('측정 날짜', measureDate ?? '정보 없음'),
+                const SizedBox(height: 8),
+                _buildInfoRow('수술 날짜', surgeryDate ?? '정보 없음'),
+                const SizedBox(height: 8),
+                _buildInfoRow('병명', diseaseName ?? '정보 없음'),
+              ],
             ],
           ),
         ),
@@ -434,6 +460,228 @@ class _EcgDetailPageState extends State<EcgDetailPage> {
         Text(value, style: TextStyle(color: color ?? Colors.black)),
       ],
     );
+  }
+
+  Map<String, dynamic> _getHospitalMeta(String jsonPath) {
+    final metaMap = {
+      "ecg_2025-11-05T17-17-01_normal_raw": {
+        "name": "wg17",
+        "measurement": "2023-11-13 15:58:29",
+        "surgeryDate": "2023-11-14",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T17-17-02_normal_raw": {
+        "name": "wg17",
+        "measurement": "2023-11-15 10:27:48",
+        "surgeryDate": "2023-11-14",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T21-21-01_abnormal_raw": {
+        "name": "wg21",
+        "measurement": "2023-11-21 14:26:06",
+        "surgeryDate": "2023-11-22",
+        "disease": "Long-standing persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T21-21-02_normal_raw": {
+        "name": "wg21",
+        "measurement": "2023-11-23 11:39:03",
+        "surgeryDate": "2023-11-22",
+        "disease": "Long-standing persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T22-22-01_abnormal_raw": {
+        "name": "wg22",
+        "measurement": "2023-11-21 14:33:18",
+        "surgeryDate": "2023-11-22",
+        "disease": "Long-standing persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T23-23-01_abnormal_raw": {
+        "name": "wg23",
+        "measurement": "2023-11-21 14:41:15",
+        "surgeryDate": "2023-11-22",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T23-23-02_normal_raw": {
+        "name": "wg23",
+        "measurement": "2023-11-23 12:43:14",
+        "surgeryDate": "2023-11-22",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T26-26-01_abnormal_raw": {
+        "name": "wg26",
+        "measurement": "2023-11-28 15:20:14",
+        "surgeryDate": "2023-11-29",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T26-26-02_abnormal_raw": {
+        "name": "wg26",
+        "measurement": "2023-11-30 11:28:43",
+        "surgeryDate": "2023-11-29",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T27-27-01_abnormal_raw": {
+        "name": "wg27",
+        "measurement": "2023-11-28 15:30:27",
+        "surgeryDate": "2023-11-29",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T27-27-02_abnormal_raw": {
+        "name": "wg27",
+        "measurement": "2023-11-30 11:25:16",
+        "surgeryDate": "2023-11-29",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T28-28-01_normal_raw": {
+        "name": "wg28",
+        "measurement": "2023-11-29 13:38:22",
+        "surgeryDate": "2023-11-30",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T28-28-02_abnormal_raw": {
+        "name": "wg28",
+        "measurement": "2023-12-01 11:08:25",
+        "surgeryDate": "2023-11-30",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T29-29-01_normal_raw": {
+        "name": "wg29",
+        "measurement": "2023-12-05 15:37:03",
+        "surgeryDate": "2023-12-06",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T30-30-01_abnormal_raw": {
+        "name": "wg30",
+        "measurement": "2023-12-05 15:41:25",
+        "surgeryDate": "2023-12-06",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T31-31-01_normal_raw": {
+        "name": "wg31",
+        "measurement": "2023-12-05 15:44:00",
+        "surgeryDate": "2023-12-06",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T35-35-02_normal_raw": {
+        "name": "wg35",
+        "measurement": "2023-12-21 10:54:37",
+        "surgeryDate": "2023-12-20",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T36-36-02_abnormal_raw": {
+        "name": "wg36",
+        "measurement": "2023-12-21 10:20:39",
+        "surgeryDate": "2023-12-20",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T44-44-01_normal_raw": {
+        "name": "wg44",
+        "measurement": "2024-01-09 15:30:41",
+        "surgeryDate": "2024-01-10",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T44-44-02_normal_raw": {
+        "name": "wg44",
+        "measurement": "2024-01-11 16:40:06",
+        "surgeryDate": "2024-01-10",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T45-45-01_abnormal_raw": {
+        "name": "wg45",
+        "measurement": "2024-01-09 15:32:13",
+        "surgeryDate": "2024-01-10",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T46-46-01_abnormal_raw": {
+        "name": "wg46",
+        "measurement": "2024-01-09 16:22:05",
+        "surgeryDate": "2024-01-10",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T46-46-02_normal_raw": {
+        "name": "wg46",
+        "measurement": "2024-01-11 16:42:37",
+        "surgeryDate": "2024-01-10",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T53-53-02_normal_raw": {
+        "name": "wg53",
+        "measurement": "2024-01-25 12:43:11",
+        "surgeryDate": "2024-01-24",
+        "disease": "Atrial fibrillation"
+      },
+      "ecg_2025-11-05T54-54-02_normal_raw": {
+        "name": "wg54",
+        "measurement": "2024-01-25 12:45:12",
+        "surgeryDate": "2024-01-24",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T55-55-02_normal_raw": {
+        "name": "wg55",
+        "measurement": "2024-01-25 12:47:24",
+        "surgeryDate": "2024-01-24",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T58-58-02_normal_raw": {
+        "name": "wg58",
+        "measurement": "2024-02-08 13:31:46",
+        "surgeryDate": "2024-02-07",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T59-59-02_abnormal_raw": {
+        "name": "wg59",
+        "measurement": "2024-02-08 13:36:07",
+        "surgeryDate": "2024-02-07",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T60-60-02_abnormal_raw": {
+        "name": "wg60",
+        "measurement": "2024-02-08 13:43:15",
+        "surgeryDate": "2024-02-07",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T61-61-02_normal_raw": {
+        "name": "wg61",
+        "measurement": "2024-02-08 13:52:25",
+        "surgeryDate": "2024-02-07",
+        "disease": "Paroxysmal atrial fibrillation"
+      },
+      "ecg_2025-11-05T62-62-01_abnormal_raw": {
+        "name": "wg62",
+        "measurement": "2024-03-06 16:11:49",
+        "surgeryDate": "2024-03-07",
+        "disease": "Persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T63-63-01_normal_raw": {
+        "name": "wg63",
+        "measurement": "2024-03-19 16:07:29",
+        "surgeryDate": "2024-03-20",
+        "disease": "paroxymal atrial fibrillation"
+      },
+      "ecg_2025-11-05T63-63-02_abnormal_raw": {
+        "name": "wg63",
+        "measurement": "2024-03-21 11:56:14",
+        "surgeryDate": "2024-03-20",
+        "disease": "paroxymal atrial fibrillation"
+      },
+      "ecg_2025-11-05T70-70-02_normal_raw": {
+        "name": "wg70",
+        "measurement": "2024-03-29 11:29:14",
+        "surgeryDate": "2024-03-28",
+        "disease": "persistent atrial fibrillation"
+      },
+      "ecg_2025-11-05T73-73-01_abnormal_raw": {
+        "name": "wg73",
+        "measurement": "2024-04-16 14:56:20",
+        "surgeryDate": "2024-04-17",
+        "disease": "paroxymal atrial fibrillation"
+      }
+    };
+
+    final baseName = p.basenameWithoutExtension(jsonPath);
+    return metaMap[baseName] ?? {
+      'name': '정보 없음',
+      'surgeryDate': '-',
+      'disease': '-',
+    };
   }
 
   Widget _buildQtStRows() {
